@@ -1,0 +1,48 @@
+# This files contains the information needed for the Metashot Analysis
+
+################
+# general data #
+################
+script_path :
+reference_path :
+
+################
+#  human data  #
+################
+star_genome : Homo_sapiens/
+
+################
+#  virus data  #
+################
+virus_bowtie_index : Virus/bowtie_index/Viral_division
+virus_nodesfile : Virus/tango_dmp_folder/visualization_virus.dmp
+virus_tango_dmp : Virus/tango_dmp_folder/VIRUS_DMP
+human_virus_list : Virus/human_viruses_selection/accepted_accession.lst
+herv_list : Virus/tango_dmp_folder/herv.lst
+
+#################
+# bacteria data #
+#################
+bacterial_split_file : Bacteria/bacterial_bowtie_index_reference.lst
+bacteria_nodesfile : Bacteria/tango_dmp_folder/visualization_bacterial.dmp
+bacteria_tango_dmp : Bacteria/tango_dmp_folder/BACTERIA_DMP
+
+################
+#  fungi data  #
+################
+fungi_bowtie_index : Fungi/bowtie_index/Fungal_division
+fungi_nodesfile : Fungi/tango_dmp_folder/visualization_fungi.dmp
+fungi_tango_dmp : Fungi/tango_dmp_folder/FUNGI_DMP
+
+################
+# protist data #
+################
+protist_bowtie_index : Protist/bowtie_index/Protista_division
+protist_nodesfile : Protist/tango_dmp_folder/visualization_protista.dmp
+protist_tango_dmp : Protist/tango_dmp_folder/PROTISTA_DMP
+
+
+##################
+# krona taxonomy #
+##################
+krona_tax : krona_tax
