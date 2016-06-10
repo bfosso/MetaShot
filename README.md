@@ -7,7 +7,7 @@ In MetaShot, third party tools and new developed Python and Bash scripts are int
 
 Pipeline
 --------
-The MetaShot analysis procedure can be divided in three main processes:
+The MetaShot analysis procedure can be divided in four main processes:
 
   1. Pre-processing procedures: input sequences containing low-quality/complexity regions and reads shorter than 50 nucleotides are removed. This is performed by applying FaQCs [1]. Moreover, is also possible to remove the phage PhiX sequences. This procedure is optional because it is time and computational extensive (FaQC with PhiX removal is 7-time slower). Only reads passing all the quality check filters are directed to the following steps.
   2. Comparison with the human genome: cleaned data are mapped against the human genome (hg19, GRCh37, 2009) [2] and transcriptome (UCSC RefSeq) by applying STAR [3].
