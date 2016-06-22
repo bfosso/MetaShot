@@ -127,7 +127,7 @@ R2 = os.path.join( wd, R2 )
 print "Mapping on the genome"
 os.chdir( folder )
 genome_database = choice_reference( host, "genome" )
-cmd = shlex.split("STAR --runThreadN 10 --genomeDir /home/bfosso/share/STAR/human %s --readFilesIn %s %s --outFileNamePrefix %s_data" % (genome, R1, R2, host) )
+cmd = shlex.split("STAR --runThreadN 10 --genomeDir %s %s --readFilesIn %s %s --outFileNamePrefix %s_data" % (os.path.join(reference_path,"Homo_sapiens/"),genome, R1, R2, host) )
 p = subprocess.Popen( cmd )
 p.wait( )
 os.chdir( wd )
