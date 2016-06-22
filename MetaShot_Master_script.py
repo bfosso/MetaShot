@@ -281,7 +281,7 @@ for i in range( len( multiple_input_data ) ):
     data_processing_list.setdefault( i, [] )
     os.chdir( folder )
     mapper = shlex.split(
-        "python %s -s human -i read_list -g" % os.path.join( script_path, "host_mapper.py" ) )
+        "python %s -s human -i read_list -g -r %s" % (os.path.join( script_path, "host_mapper.py" ), reference_path) )
     p = subprocess.Popen( mapper )
     print p.pid
     data_processing_list[i].append( p.pid )
@@ -311,8 +311,7 @@ while len( completed ) != len( data_processing_list ):
                     del data_processing_list[index]
                     data_processing_list.setdefault( index, [] )
                     mapper = shlex.split(
-                        "python %s -s human -i read_list -g" % os.path.join( script_path,
-                                                                                "host_mapper.py" ) )
+                        "python %s -s human -i read_list -g -r %s" % (os.path.join( script_path, "host_mapper.py" ), reference_path) )
                     p = subprocess.Popen( mapper )
                     data_processing_list[index].append( p.pid )
                     data_processing_list[index].append(
