@@ -126,13 +126,11 @@ R1 = os.path.join( wd, R1 )
 R2 = os.path.join( wd, R2 )
 print "Mapping on the genome"
 os.chdir( folder )
-# genome_database = choice_reference( host, "genome" )
-# cmd = shlex.split(
-#     "STAR --runThreadN 10 --genomeDir /home/bfosso/share/STAR/human %s --readFilesIn %s %s --outFileNamePrefix %s_data" % (
-#         genome, R1, R2, host) )
-# p = subprocess.Popen( cmd )
-# p.wait( )
-# os.chdir( wd )
+genome_database = choice_reference( host, "genome" )
+cmd = shlex.split("STAR --runThreadN 10 --genomeDir /home/bfosso/share/STAR/human %s --readFilesIn %s %s --outFileNamePrefix %s_data" % (genome, R1, R2, host) )
+p = subprocess.Popen( cmd )
+p.wait( )
+os.chdir( wd )
 
 control_sam = os.path.join( folder, host + "_dataAligned.out.sam" )
 r1_mapped = set( )
