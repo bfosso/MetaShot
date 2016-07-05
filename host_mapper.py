@@ -8,6 +8,7 @@ import getopt
 from string import strip
 import sys
 from pysam import *
+import shutil
 
 
 def usage():
