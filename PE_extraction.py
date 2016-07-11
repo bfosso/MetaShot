@@ -33,7 +33,7 @@ def usage():
            'Options:\n'
            '\t-t\tNCBI taxonomy ID. To extract human sequences please use 9606\n'
            '\t-l\ta text file containing a list of NCBI taxonomy ID, one per line\n'
-           '\t-u\textract unassigned PE reads (not considered the ambiguous PE reads\n'
+           '\t-u\textract unassigned PE reads (the ambiguous PE reads are not considered)\n'
            '\t-a\textract ambiguous PE reads\n'
            '\t-h\tprint this help.\n'
            'Usage:\n'
