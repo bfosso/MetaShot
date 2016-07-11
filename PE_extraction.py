@@ -162,7 +162,7 @@ with open("read_list_cleaned") as file_list:
                     for taxid in acc2taxid[key_name( title.split( " " )[0] )]:
                         seq_name = os.path.join( extraction_folder, "%s_R1.fastq" % taxid )
                         if os.path.exists( seq_name ):
-                            with open( name, "a" ) as a:
+                            with open( seq_name, "a" ) as a:
                                 a.write( stringa )
                         else:
                             a = open( seq_name, "w" )
