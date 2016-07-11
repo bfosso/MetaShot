@@ -160,7 +160,7 @@ with open("read_list_cleaned") as file_list:
                     for taxid in acc2taxid[key_name( title )]:
                         seq_name = os.path.join( extraction_folder, "%s_R1.fastq" % taxid )
                         if os.path.exists( seq_name ):
-                            with open( name, "a" ) as a:
+                            with open( seq_name, "a" ) as a:
                                 a.write( stringa )
                         else:
                             a = open( seq_name, "w" )
@@ -170,7 +170,7 @@ with open("read_list_cleaned") as file_list:
                     if "unassigned" in taxid_list:
                         seq_name = os.path.join( extraction_folder, "unassigned_R1.fastq" )
                         if os.path.exists( seq_name ):
-                            with open( name, "a" ) as a:
+                            with open( seq_name, "a" ) as a:
                                 a.write( stringa )
                         else:
                             a = open( seq_name, "w" )
@@ -183,7 +183,7 @@ with open("read_list_cleaned") as file_list:
                     for taxid in acc2taxid[key_name( title )]:
                         seq_name = os.path.join( extraction_folder, "%s_R2.fastq" % taxid )
                         if os.path.exists( seq_name ):
-                            with open( name, "a" ) as a:
+                            with open( seq_name, "a" ) as a:
                                 a.write( stringa )
                         else:
                             a = open( seq_name, "w" )
@@ -193,7 +193,7 @@ with open("read_list_cleaned") as file_list:
                     if "unassigned" in taxid_list:
                         seq_name = os.path.join( extraction_folder, "unassigned_R2.fastq" )
                         if os.path.exists( seq_name ):
-                            with open( name, "a" ) as a:
+                            with open( seq_name, "a" ) as a:
                                 a.write( stringa )
                         else:
                             a = open( seq_name, "w" )
