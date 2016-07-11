@@ -127,16 +127,16 @@ for division in ["bacteria", "virus", "protist", "fungi"]:
                 if len( extractable ) >= 1:
                     acc2taxid[acc] = extractable
 if "9606" in taxid_list:
-    acc2taxid.setdefault( "9606", set( ) )
     with open( os.path.join( wd, "mapping_on_human", "only_human.lst" ) ) as a:
         for line in a:
-            acc2taxid["9606"].add( line.strip( ) )
+            acc2taxid.setdefault(line.strip( ),set())
+            acc2taxid[line.strip( )].add( "9606" )
             total_assigned.add( line.strip( ) )
 if "ambiguous" in taxid_list:
-    acc2taxid.setdefault( "ambiguous", set( ) )
     with open( os.path.join( wd, "ambiguos_pe_read.lst" ) ) as a:
         for line in a:
-            acc2taxid["ambiguous"].add( line.strip( ) )
+            acc2taxid.setdefault( line.strip( ), set( ) )
+            acc2taxid[line.strip( )].add( "ambiguous" )
             total_assigned.add( line.strip( ) )
 print "A total number of %i was selected for the extraction" % len( acc2taxid )
 
