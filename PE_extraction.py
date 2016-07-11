@@ -158,8 +158,8 @@ with open("read_list_cleaned") as file_list:
         with open( R1 ) as fastq:
             for title, seq, qual in FastqGeneralIterator( fastq ):
                 stringa = "@%s\n%s\n+\n%s\n" % (title, seq, qual)
-                if acc2taxid.has_key( key_name( title ) ):
-                    for taxid in acc2taxid[key_name( title )]:
+                if acc2taxid.has_key( key_name( title.split( " " )[0] ) ):
+                    for taxid in acc2taxid[key_name( title.split( " " )[0] )]:
                         seq_name = os.path.join( extraction_folder, "%s_R1.fastq" % taxid )
                         if os.path.exists( seq_name ):
                             with open( name, "a" ) as a:
@@ -169,7 +169,7 @@ with open("read_list_cleaned") as file_list:
                             a.write( stringa )
                             a.close( )
                 else:
-                    if "unassigned" in taxid_list:
+                    if "unassigned" in taxid_list and title.split( " " )[0] not in total_assigned:
                         seq_name = os.path.join( extraction_folder, "unassigned_R1.fastq" )
                         if os.path.exists( seq_name ):
                             with open( seq_name, "a" ) as a:
@@ -181,8 +181,8 @@ with open("read_list_cleaned") as file_list:
         with open( R2 ) as fastq:
             for title, seq, qual in FastqGeneralIterator( fastq ):
                 stringa = "@%s\n%s\n+\n%s\n" % (title, seq, qual)
-                if acc2taxid.has_key( key_name( title ) ):
-                    for taxid in acc2taxid[key_name( title )]:
+                if acc2taxid.has_key( key_name( title.split( " " )[0] ) ):
+                    for taxid in acc2taxid[key_name( title.split( " " )[0] )]:
                         seq_name = os.path.join( extraction_folder, "%s_R2.fastq" % taxid )
                         if os.path.exists( seq_name ):
                             with open( seq_name, "a" ) as a:
@@ -192,7 +192,7 @@ with open("read_list_cleaned") as file_list:
                             a.write( stringa )
                             a.close( )
                 else:
-                    if "unassigned" in taxid_list:
+                    if "unassigned" in taxid_list and title.split( " " )[0] not in total_assigned:
                         seq_name = os.path.join( extraction_folder, "unassigned_R2.fastq" )
                         if os.path.exists( seq_name ):
                             with open( seq_name, "a" ) as a:
