@@ -47,7 +47,7 @@ Example:
 \tMetaShot_Master_script.py -p param_file.txt -m read_files -t 30 -s DNA
 """}
 
-script_path = "/home/bfosso/share/MetaShot_reference/script/MetaShot_execution"
+
 
 multiple_input_data = []
 processor_number = ""
