@@ -10,6 +10,7 @@ import subprocess
 import sys
 from string import strip
 import time
+import psutil
 
 try:
     import numpy
@@ -33,16 +34,16 @@ def usage():
            'Options:\n'
            '\t-i\tpaired-end file list: a line containing the R1, the R2 files tab separeted [MANDATORY]\n'
            '\t-d\tDivision of interest. Allowed division are: virus, bacteria, fungi, protist [MANDATORY]\n'
-           '\t-r\treference path [MANDATORY]\n'
+           '\t-b\treference path [MANDATORY]\n'
            '\t-h\tprint this help.\n'
            'Usage:\n'
-           '\tpython division_analyser -i read_list -d division\n'
+           '\tpython division_analyser -i read_list -d division -b path2bowtie2index\n'
            '\n'
            )
 
 
 try:
-    opts, args = getopt.getopt( sys.argv[1:], "hi:d:" )
+    opts, args = getopt.getopt( sys.argv[1:], "hi:d:b:" )
 except getopt.GetoptError, err:
     print str( err )
     usage( )
@@ -50,7 +51,7 @@ except getopt.GetoptError, err:
 
 f_in = ""
 division = ""
-reference_path = ""
+bowtie_path = ""
 if len( opts ) != 0:
     for o, a in opts:
         if o == "-h":
@@ -60,8 +61,8 @@ if len( opts ) != 0:
             f_in = a
         elif o == "-d":
             division = a.lower( )
-        elif o == "-r":
-            reference_path = a
+        elif o == "-b":
+            bowtie_path = a
         else:
             usage( )
             sys.exit( "Unhandeled option" )
@@ -77,8 +78,6 @@ def option_control(l, m, path ):
         sys.exit( "The indicated read list file doesn't exists" )
     if m == "":
         sys.exit( "Missing Division choice" )
-    if os.path.exists( os.path.dirname( m ) ) is False:
-        sys.exit( "The indicated division data don't exists" )
     if path == "":
         sys.exit( "Missing refence path" )
 
@@ -132,9 +131,12 @@ def input_data_evaluation(n, c):
 
 
 def cigar_parsing(q_name, q_len, cigar_data, value, r_name):
+    import fpformat
     mm = 0
     i = 0
     d = 0
+    soft = 0
+    hard = 0
     for item in cigar_data:
         if item[0] == 0:
             mm += item[1]
@@ -142,27 +144,34 @@ def cigar_parsing(q_name, q_len, cigar_data, value, r_name):
             i += item[1]
         elif item[0] == 2:
             d += item[1]
+        elif item[0] == 4:
+            soft += item[1]
+        elif item[0] == 5:
+            hard += item[1]
+    q_len = mm + i + soft + hard
+    tollerance = int( fpformat.fix( q_len * 0.06, 0 ) )
     align_len = mm + i + d
     query_aligned_len = float( mm + i )
-    if query_aligned_len / q_len >= 0.7:
-        if align_len != 0 and value >= 0:
-            identity_percentage = ((align_len - value) / align_len) * 100
-            if identity_percentage >= 93:
-                evaluated_data = [q_name, r_name, fpformat.fix( identity_percentage, 2 ), str( value )]
-                if align.is_read1:
-                    evaluated_data.append( "r1\n" )
-                elif align.is_read2:
-                    evaluated_data.append( "r2\n" )
-                return evaluated_data
-            else:
-                return None
+    if value <= tollerance:
+        if query_aligned_len / q_len >= 0.7:
+            if align_len != 0 and value >= 0:
+                identity_percentage = ((align_len - value) / align_len) * 100
+                if identity_percentage >= 94:
+                    evaluated_data = [q_name, r_name, fpformat.fix( identity_percentage, 2 ), str( value )]
+                    if align.is_read1:
+                        evaluated_data.append( "r1\n" )
+                    elif align.is_read2:
+                        evaluated_data.append( "r2\n" )
+                    return evaluated_data
+                else:
+                    return None
+    else:
+        return None
 
 
-division2bowtie_index_files = {"virus": os.path.join(reference_path, "Virus/bowtie_index/Viral_division"),
-                               "fungi": os.path.join(reference_path, "Fungi/bowtie_index/Fungal_division"),
-                               "protist": os.path.join(reference_path, "Protist/bowtie_index/Protista_division")}
 
-option_control( f_in, division2bowtie_index_files[division], reference_path )
+
+option_control( f_in, division, bowtie_path )
 
 script_time = time.strftime( "%d/%m/%Y %H:%M:%S", time.localtime( time.time( ) ) )
 print "START", script_time
@@ -212,19 +221,16 @@ def error_file_check(l):
 input_data_evaluation( R1_string, R2_string )
 
 wd = os.getcwd( )
-if os.path.exists( os.path.join( wd, division ) ):
-    pass
-else:
+if os.path.exists( os.path.join( wd, division ) ) is False:
     os.mkdir( os.path.join( wd, division ) )
 
 # esecuzione del mapping divisione specifico
 print "bowtie on division data"
 sam_output = os.path.join( wd, division, "mapping_on_%s.sam" % division )
-database = division2bowtie_index_files[division]
 cmd = shlex.split(
-    "bowtie2 -q -N1 -k100 -L20 --no-unal -x  %s -1 %s -2 %s -S %s -p 20" % (database, R1_string, R2_string, sam_output) )
+    "bowtie2 -q -N1 -k100 -L20 --no-unal -x  %s -1 %s -2 %s -S %s -p 20 --mm " % (bowtie_path, R1_string, R2_string, sam_output) )
 tmp = open( os.path.join( wd, division, "error.lst" ), "w" )
-p = subprocess.Popen( cmd, stderr=tmp )
+p = psutil.Popen( cmd, stderr=tmp )
 p.wait( )
 tmp.close( )
 # sam conversion to bam
@@ -232,7 +238,7 @@ if error_file_check( os.path.join( wd, division, "error.lst" ) ) == 0:
     bam_output = os.path.join( wd, division, "mapping_on_%s.bam" % division )
     cmd = shlex.split( "samtools view -bS %s -o %s" % (sam_output, bam_output) )
     tmp = open( os.path.join( wd, division, "error.lst" ), "w" )
-    p = subprocess.Popen( cmd, stderr=tmp )
+    p = psutil.Popen( cmd, stderr=tmp )
     p.wait( )
     tmp.close( )
 else:
@@ -249,107 +255,75 @@ else:
     print "SAM will be used to identity significant mapping data. This could require long processing time"
     sam = Samfile( sam_output )
 division_match = {}
+
 # parsing dei dati ottenuti
 print "sam parsing"
 script_time = time.strftime( "%d/%m/%Y %H:%M:%S", time.localtime( time.time( ) ) )
 print "START", script_time
 pe_data = os.path.join( wd, division, "PE_data" )
-if os.path.exists( pe_data ) is not True:
+
+if os.path.exists( pe_data ) is False:
     os.mkdir( pe_data )
+
 query2file_name = {}
 counter = 1
 for align in sam:
     if align.tid != -1:
         query_name = align.qname  # accession della read
         query_len = float( align.rlen )  # lunghezza delle read in esame
-        # query_aligned_len = float(align.qlen)  # porzione della read allineata
         ref_name = sam.getrname( align.tid )
-        # print query_name, ref_name
         cigar = list( align.cigar )
-        print query_name, query_len, ref_name, cigar
         nm = -1
         for coppia in align.tags:
             if coppia[0] == "NM":
                 nm = float( coppia[1] )
-        stringa = cigar_parsing( query_name, query_len, cigar, nm, ref_name )
-        if stringa is not None:
-            if query2file_name.has_key( query_name ):
-                name = os.path.join( pe_data, query2file_name[query_name] )
-                with open( name, "a" ) as a:
+        if nm <= (query_len / 100 * 10):
+            stringa = cigar_parsing( query_name, query_len, cigar, nm, ref_name )
+            if stringa is not None:
+                if query2file_name.has_key( query_name ):
+                    name = os.path.join( pe_data, query2file_name[query_name] )
+                    with open( name, "a" ) as a:
+                        a.write( "\t".join( stringa ) )
+                else:
+                    query2file_name[query_name] = str( counter )
+                    counter += 1
+                    name = os.path.join( pe_data, query2file_name[query_name] )
+                    a = open( name, "w" )
                     a.write( "\t".join( stringa ) )
-            else:
-                query2file_name[query_name] = str( counter )
-                counter += 1
-                name = os.path.join( pe_data, query2file_name[query_name] )
-                a = open( name, "w" )
-                a.write( "\t".join( stringa ) )
-                a.close( )
+                    a.close( )
 sam.close( )
 
 match_file = open( os.path.join( division, "mapped_on_" + division + "_total.txt" ), "w" )
+
 print "splitted files analysis"
-for name in os.listdir( pe_data ):
+for name in query2file_name.values():
     # print name
     name = os.path.join( pe_data, name )
     r1_match = {}
     r2_match = {}
-    division_match = {}
     with open( name ) as a:
         for line in a:
             s = map( strip, line.split( "\t" ) )
-            query_name, ref_name, paired_perc_id, nm, read = s[0], s[1], float( s[2] ), float( s[3] ), s[4]
+            query_name, ref_name, paired_perc_id, read = s[0], s[1], float( s[2] ), s[4]
             if read == "r1":
-                r1_match.setdefault( query_name, {} )
-                r1_match[query_name].setdefault( ref_name, [] )
-                r1_match[query_name][ref_name].append( paired_perc_id )
-                r1_match[query_name][ref_name].append( nm )
+                r1_match.setdefault( ref_name, [] )
+                r1_match[ref_name].append( paired_perc_id )
             elif read == "r2":
-                r2_match.setdefault( query_name, {} )
-                r2_match[query_name].setdefault( ref_name, [] )
-                r2_match[query_name][ref_name].append( paired_perc_id )
-                r2_match[query_name][ref_name].append( nm )
+                r2_match.setdefault( ref_name, [] )
+                r2_match[ref_name].append( paired_perc_id )
     r1_acc = set( r1_match.keys( ) )
     r2_acc = set( r2_match.keys( ) )
     common = r1_acc.intersection( r2_acc )
-
-    for key in common:
-        # definiamo le coppie per cui le due read mappano sulla stessa seq di riferimento
-        common_match = set( r1_match[key].keys( ) ).intersection( set( r2_match[key].keys( ) ) )
-        if len( common_match ) > 0:
-            for ref_name in common_match:
-                division_match.setdefault( key, {} )
-                division_match[key].setdefault( ref_name, [] )
-                perc_id = numpy.mean( [r1_match[key][ref_name][0], r2_match[key][ref_name][0]] )
-                nm_comb = numpy.mean( [r1_match[key][ref_name][1], r2_match[key][ref_name][1]] )
-                division_match[key][ref_name].append( perc_id )
-                division_match[key][ref_name].append( nm_comb )
-
-    # questa versione fa una riduzione dei match da prendere in considerazione sulla base degli nm
-    # if len( division_match.keys( ) ) != 0:
-    #     for query in division_match.keys( ):
-    #         over_97 = {}
-    #         nm_over_97 = []
-    #         for ref in division_match[query].keys( ):
-    #             if division_match[query][ref][0] >= 97:
-    #                 over_97[ref] = division_match[query][ref][1]
-    #                 nm_over_97.append( division_match[query][ref][1] )
-    #         match_list = set( )
-    #         if len( nm_over_97 ) > 0:
-    #             threshold = min( nm_over_97 ) + 1
-    #             for ref in over_97.keys( ):
-    #                 if over_97[ref] <= threshold:
-    #                     match_list.add( ref )
-    #         if len( match_list ) != 0:
-    #             print >> match_file, query + " " + " ".join( match_list )
-
-    if len( division_match.keys( ) ) != 0:
-        for query in division_match.keys( ):
-            match_list = set( )
-            for ref in division_match[query].keys( ):
-                if division_match[query][ref][0] >= 97:
-                    match_list.add( ref )
-            if len( match_list ) != 0:
-                print >> match_file, query + " " + " ".join( match_list )
+    if len( common ) > 0:
+        match_list = [query_name]
+        division_match = {}
+        for ref in common:
+            division_match.setdefault( ref, [] )
+            perc_id = numpy.mean( [max(r1_match[ref]), max(r2_match[ref])] )
+            if perc_id >= 97:
+                match_list.append( ref )
+        if len( match_list ) > 1:
+            print >> match_file, " ".join( match_list )
 match_file.close( )
 
 script_time = time.strftime( "%d/%m/%Y %H:%M:%S", time.localtime( time.time( ) ) )

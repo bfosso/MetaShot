@@ -166,20 +166,25 @@ def controll_mapping_procedure(folder):
     else:
         return 0
 
+
 def key_name(acc):
-    if len(acc.split("/")) == 2:
-        parts = acc.split("/")
-    elif len(acc.split()) == 2:
-        parts = acc.split()
+    if len( acc.split( "/" ) ) == 2:
+        parts = acc.split( "/" )
+    elif len( acc.split( ) ) == 2:
+        parts = acc.split( )
     else:
-        parts = acc.split()
+        parts = acc.split( )
     seq_id = parts[0]
     return seq_id
 
+
 def cigar_parsing(q_name, q_len, cigar_data, value, r_name):
+    import fpformat
     mm = 0
     i = 0
     d = 0
+    soft = 0
+    hard = 0
     for item in cigar_data:
         if item[0] == 0:
             mm += item[1]
@@ -187,20 +192,40 @@ def cigar_parsing(q_name, q_len, cigar_data, value, r_name):
             i += item[1]
         elif item[0] == 2:
             d += item[1]
+        elif item[0] == 4:
+            soft += item[1]
+        elif item[0] == 5:
+            hard += item[1]
+    q_len = mm + i + soft + hard
+    tollerance = int( fpformat.fix( q_len * 0.06, 0 ) )
     align_len = mm + i + d
     query_aligned_len = float( mm + i )
-    if query_aligned_len / q_len >= 0.7:
-        if align_len != 0 and value >= 0:
-            identity_percentage = ((align_len - value) / align_len) * 100
-            if identity_percentage >= 93:
-                evaluated_data = [q_name, r_name, fpformat.fix( identity_percentage, 2 ), str( value )]
-                if align.is_read1:
-                    evaluated_data.append( "r1\n" )
-                elif align.is_read2:
-                    evaluated_data.append( "r2\n" )
-                return evaluated_data
-            else:
-                return None
+    if value <= tollerance:
+        if query_aligned_len / q_len >= 0.7:
+            if align_len != 0 and value >= 0:
+                identity_percentage = ((align_len - value) / align_len) * 100
+                if identity_percentage >= 94:
+                    evaluated_data = [q_name, r_name, fpformat.fix( identity_percentage, 2 ), str( value )]
+                    if align.is_read1:
+                        evaluated_data.append( "r1\n" )
+                    elif align.is_read2:
+                        evaluated_data.append( "r2\n" )
+                    return evaluated_data
+                else:
+                    return None
+    else:
+        return None
+
+
+def pid_status(process_pid):
+    """This function controls the status of a specific process"""
+    status = ""
+    if psutil.pid_exists( process_pid ):
+        status = psutil.Process( process_pid ).status( )
+    else:
+        status = "finished"
+    return status
+
 
 if script_path == "":
     print "The parameter file lacks of the script_path info"
@@ -211,10 +236,10 @@ if reference_path == "":
 
 # multiple mapping procedure
 split2index = {}
-with open( os.path.join(reference_path, "Bacteria/bacterial_bowtie_index_reference.lst") ) as a:
+with open( reference_path) as a:
     for line in a:
         s = map( strip, line.split( ) )
-        split2index[s[0]] = os.path.join(reference_path, s[1])
+        split2index[s[0]] = os.path.join( reference_path, s[1] )
 
 R1 = []
 R2 = []
@@ -246,28 +271,16 @@ split2result = {}
 # mapping step
 mapping_process_pid = {}
 for split in split2index.keys( ):
+    process_iteration = 0
     mapping_folder = os.path.join( bacterial_folder, split )
-    if os.path.exists( mapping_folder ) is False:
-        os.mkdir( mapping_folder )
-        database = split2index[split]
-        cmd = shlex.split( "python %s -1 %s -2 %s -d %s -s %s -f %s -t %s" % (os.path.join( script_path, "bacterial_mapper.py" ), R1_string, R2_string, database, split, mapping_folder, threads) )
-        p = subprocess.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT )
-        mapping_process_pid.setdefault( split, [] )
-        mapping_process_pid[split].append( p.pid )
-        mapping_process_pid[split].append( mapping_folder )
-    else:
-        result = controll_mapping_procedure( mapping_folder )
-        if result == 0:
-            database = split2index[split]
-            cmd = shlex.split( "python %s -1 %s -2 %s -d %s -s %s -f %s -t %s" % (os.path.join( script_path, "bacterial_mapper.py" ), R1_string, R2_string, database, split, mapping_folder, threads) )
-            p = subprocess.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT )
-            mapping_process_pid.setdefault( split, [] )
-            mapping_process_pid[split].append( p.pid )
-            mapping_process_pid[split].append( mapping_folder )
-        else:
-            mapping_process_pid.setdefault( split, [] )
-            mapping_process_pid[split].append( -1 )
-            mapping_process_pid[split].append( mapping_folder )
+    os.mkdir( mapping_folder )
+    database = split2index[split]
+    cmd = shlex.split( "python %s -1 %s -2 %s -d %s -s %s -f %s -t %s" % (os.path.join( script_path, "bacterial_mapper.py" ), R1_string, R2_string, database, split, mapping_folder, threads) )
+    p = psutil.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT )
+    mapping_process_pid.setdefault( split, [] )
+    mapping_process_pid[split].append( p.pid )
+    mapping_process_pid[split].append( mapping_folder )
+    mapping_process_pid[split].append( process_iteration )
 
 completed = set( )
 pe_data = os.path.join( bacterial_folder, "PE_data" )
@@ -280,23 +293,26 @@ while len( completed ) != len( mapping_process_pid ):
         # print split
         pid = mapping_process_pid[split][0]
         mapping_folder = mapping_process_pid[split][1]
-        process_status = ""
-        if psutil.pid_exists( pid ):
-            process_status = psutil.Process( pid ).status( )
-        # print process_status
+        process_iteration = mapping_process_pid[split][2]
+        process_status = pid_status( pid )
         if psutil.pid_exists( pid ) is False or process_status.lower( ) in ["finished", "zombie"]:
             if split not in completed:
                 result = controll_mapping_procedure( mapping_folder )
                 if result == 0:
-                    print "%s bacterial section require a new mapping procedure" % split
-                    database = split2index[split]
-                    cmd = shlex.split(
-                        "python %s -1 %s -2 %s -d %s -s %s -f %s -t %s" % (os.path.join( script_path, "bacterial_mapper.py" ), R1_string, R2_string, database, split, mapping_folder, threads) )
-                    p = subprocess.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT )
-                    del mapping_process_pid[split]
-                    mapping_process_pid.setdefault( split, [] )
-                    mapping_process_pid[split].append( p.pid )
-                    mapping_process_pid[split].append( mapping_folder )
+                    process_iteration += 1
+                    if process_iteration < 5:
+                        print "%s bacterial section require a new mapping procedure" % split
+                        database = split2index[split]
+                        cmd = shlex.split(
+                            "python %s -1 %s -2 %s -d %s -s %s -f %s -t %s" % (os.path.join( script_path, "bacterial_mapper.py" ), R1_string, R2_string, database, split, mapping_folder, threads) )
+                        p = psutil.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT )
+                        del mapping_process_pid[split]
+                        mapping_process_pid.setdefault( split, [] )
+                        mapping_process_pid[split].append( p.pid )
+                        mapping_process_pid[split].append( mapping_folder )
+                        mapping_process_pid[split].append( process_iteration )
+                    else:
+                        sys.exit( "the bacterial identification procedure data failed after 5 attemps" )
                 else:
                     file_name = open( result ).readlines( )[0].strip( )
                     if file_name.endswith( "bam" ):
@@ -307,34 +323,32 @@ while len( completed ) != len( mapping_process_pid ):
                         if align.tid != -1:
                             query_name = align.qname  # accession della read
                             query_len = float( align.rlen )  # lunghezza delle read in esame
-                            # query_aligned_len = float(align.qlen)  # porzione della read allineata
                             ref_name = sam.getrname( align.tid )
-                            # print query_name, ref_name
-                            # print align.cigar
                             cigar = list( align.cigar )
                             nm = -1
                             for coppia in align.tags:
                                 if coppia[0] == "NM":
                                     nm = float( coppia[1] )
-                            stringa = cigar_parsing( query_name, query_len, cigar, nm, ref_name )
-                            if stringa is not None:
-                                if query2file_name.has_key( query_name ):
-                                    name = os.path.join( pe_data, query2file_name[query_name] )
-                                    with open( name, "a" ) as a:
+                            if nm <= (query_len/100 * 10):
+                                stringa = cigar_parsing( query_name, query_len, cigar, nm, ref_name )
+                                if stringa is not None:
+                                    if query2file_name.has_key( query_name ):
+                                        name = os.path.join( pe_data, query2file_name[query_name] )
+                                        with open( name, "a" ) as a:
+                                            a.write( "\t".join( stringa ) )
+                                    else:
+                                        query2file_name[query_name] = str( counter )
+                                        counter += 1
+                                        name = os.path.join( pe_data, query2file_name[query_name] )
+                                        a = open( name, "w" )
                                         a.write( "\t".join( stringa ) )
-                                else:
-                                    query2file_name[query_name] = str( counter )
-                                    counter += 1
-                                    name = os.path.join( pe_data, query2file_name[query_name] )
-                                    a = open( name, "w" )
-                                    a.write( "\t".join( stringa ) )
-                                    a.close( )
+                                        a.close( )
                     sam.close( )
                     completed.add( split )
 
 match_file = open( os.path.join( bacterial_folder, "mapped_on_bacteria_total.txt" ), "w" )
 print "splitted files analysis"
-for name in os.listdir( pe_data ):
+for name in query2file_name.values():
     # print name
     name = os.path.join( pe_data, name )
     r1_match = {}
@@ -342,54 +356,24 @@ for name in os.listdir( pe_data ):
     with open( name ) as a:
         for line in a:
             s = map( strip, line.split( "\t" ) )
-            query_name, ref_name, paired_perc_id, nm, read = s[0], s[1], float( s[2] ), float( s[3] ), s[4]
+            query_name, ref_name, paired_perc_id, read = s[0], s[1], float( s[2] ), s[4]
             if read == "r1":
                 r1_match.setdefault( ref_name, [] )
                 r1_match[ref_name].append( paired_perc_id )
-                #r1_match[ref_name].append( nm )
             elif read == "r2":
                 r2_match.setdefault( ref_name, [] )
                 r2_match[ref_name].append( paired_perc_id )
-                #r2_match[ref_name].append( nm )
     r1_acc = set( r1_match.keys( ) )
     r2_acc = set( r2_match.keys( ) )
     common = r1_acc.intersection( r2_acc )
-    print common
-
     if len( common ) > 0:
+        match_list = [query_name]
         division_match = {}
         for ref in common:
-                division_match.setdefault( ref, [] )
-                perc_id = numpy.mean( [r1_match[ref][0], r2_match[ref][0]] )
-                # nm_comb = numpy.mean( [r1_match[ref][1], r2_match[ref][1]] )
-                division_match[ref].append( perc_id )
-                # division_match[ref_name].append( nm_comb )
-
-        # questa versione fa una riduzione dei match da prendere in considerazione sulla base degli nm
-        # va modificata la struttura del dizionario!!!
-        # if len( division_match.keys( ) ) != 0:
-        #     for query in division_match.keys( ):
-        #         over_97 = {}
-        #         nm_over_97 = []
-        #         for ref in division_match[query].keys( ):
-        #             if division_match[query][ref][0] >= 97:
-        #                 over_97[ref] = division_match[query][ref][1]
-        #                 nm_over_97.append( division_match[query][ref][1] )
-        #         match_list = set( )
-        #         if len( nm_over_97 ) > 0:
-        #             threshold = min( nm_over_97 ) + 1
-        #             for ref in over_97.keys( ):
-        #                 if over_97[ref] <= threshold:
-        #                     match_list.add( ref )
-        #         if len( match_list ) != 0:
-        #             print >> match_file, query + " " + " ".join( match_list )
-
-        if len( division_match.keys( ) ) != 0:
-            match_list = set()
-            match_file.add(query_name)
-            for ref in division_match.keys( ):
-                if division_match[ref][0] >= 97:
-                    match_list.add( ref )
-            if len( match_list ) > 1:
-                print >> match_file, " ".join( match_list )
+            division_match.setdefault( ref, [] )
+            perc_id = numpy.mean( [max(r1_match[ref]), max(r2_match[ref])] )
+            if perc_id >= 97:
+                match_list.append( ref )
+        if len( match_list ) > 1:
+            print >> match_file, " ".join( match_list )
 match_file.close( )

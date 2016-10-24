@@ -8,21 +8,21 @@ from ete2 import Tree, TreeNode
 def usage():
     print ('This script converts the taxonomic assignments made by TANGO in a taxonomical tree:\n'
            'Options:\n'
-           '\t-n    nodes file of the taxonomic reference tree. If not indicated it uses the bacterial taxonomy \n'
+           '\t-n    reference path \n'
            '\t-d    division'
-           '\t-i    tango output'
+           '\t-i    taxonomic assignment'
            '\t-h    print this help.\n'
            'Usage:\n'
-           '\tpython tango_ass_2_taxa_freq.py -n nodes_file -d division -i tango_output\n'
+           '\tpython tango_ass_2_taxa_freq.py -n nodes_file -d division -i taxonomic assignment file\n'
            '\t'
     )
 
 
-NODESFILE = ""
+reference_path = ""
 basename = ""
 tango_output = ""
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "hd:n:i:h")
+    opts, args = getopt.getopt(sys.argv[1:], "hd:n:i:")
 except getopt.GetoptError, err:
     print str(err)
     usage()
@@ -31,20 +31,14 @@ for o, a in opts:
     if o == "-h":
         usage()
         sys.exit()
-    elif o == "-n":
-        NODESFILE = a
     elif o == "-d":
         basename = a
     elif o == "-i":
-        tango_output = a+"_0.5"
+        tango_output = a
+    elif o == "-n":
+        reference_path = a
     else:
         assert False, "Unhandled option."
-
-if NODESFILE != "":
-    print NODESFILE
-else:
-    print "No dump file"
-    exit()
 
 if basename != "":
     print basename
@@ -77,36 +71,52 @@ node2name = {}
 node2order = {}
 all_ids = set([])
 all_nodes = []
-for line in open(NODESFILE):
-    line = line.strip()
-    fields = map(strip, line.split("|"))
-    s = fields[0].split("#")
-    nodeid = s[0]
-    c = fields[1].split("#")
-    parent = c[0]
-    node2name[s[0]] = s[1]
-    node2order[s[0]] = s[2]
-    node2parent[nodeid] = parent
+with open(os.path.join(reference_path,"Metashot_reference_taxonomy/nodes.dmp")) as nodes:
+    for line in nodes:
+        fields = map(strip, line.split("|"))
+        node, parent, order =  fields[0], fields[1], fields[2]
+        node2parent[node] = parent
+        node2order[node] = order
 
+with open( os.path.join( reference_path, "Metashot_reference_taxonomy/names.dmp" ) ) as names:
+    for line in names:
+        fields = map( strip, line.split( "|" ) )
+        if "scientific name" in fields:
+            node, name = fields[0] ,fields[1]
+            node2name[node] = name
 
-##################################
-# ANALISI DEI DATI			     #
-##################################
-#analisi risultati tango
+# DEPRECATED
+#####################################
+# ANALISI DEI DATI DAL TANGO OUTPUT #
+#####################################
+#
+# out_acc = set()
+# seq2taxa = {}
+# result = open(tango_output)
+# for line in result.readlines():
+#     line = line.strip()
+#     s = line.split("\t")
+#     out_acc.add(s[0])
+#     path = s[2].split(";")
+#     if node2order[path[0]] == "GB acc":
+#         seq2taxa[s[0]] = node2parent[path[0]]
+#     else:
+#         seq2taxa[s[0]] = path[0]
+# result.close()
+#####################################
+
+#########################################
+# ANALISI DEI DATI DAL TAXON REFINEMENT #
+#########################################
+
 out_acc = set()
 seq2taxa = {}
-result = open(tango_output)
-for line in result.readlines():
-    line = line.strip()
-    s = line.split("\t")
-    out_acc.add(s[0])
-    path = s[2].split(";")
-    if node2order[path[0]] == "GB acc":
-        seq2taxa[s[0]] = node2parent[path[0]]
-    else:
-        seq2taxa[s[0]] = path[0]
-result.close()
-
+with open(tango_output) as result:
+    for line in result:
+        ass_data = map(strip, line.split("\t"))
+        seq, assignment_taxa = ass_data[0], ass_data[1]
+        seq2taxa[seq] = assignment_taxa
+        out_acc.add(seq)
 
 taxa = set()
 assigned = {}

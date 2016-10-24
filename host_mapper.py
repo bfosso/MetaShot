@@ -9,7 +9,8 @@ from string import strip
 import sys
 from pysam import *
 import shutil
-
+import gzip
+import psutil
 
 def usage():
     print ('This script maps the non microbial sequences on the host genome and trascriptome:\n'
@@ -52,6 +53,26 @@ if len( opts ) != 0:
 else:
     usage( )
     exit( )
+
+
+def verify_input_data(a,b):
+    print """
+    Prior to the data analysis the input data are checked
+    """
+    if len(a) == 0:
+        print "forward read file list is empty"
+        usage()
+        exit()
+    if len( b ) == 0:
+        print "reverds read file list is empty"
+        usage( )
+        exit( )
+
+
+
+
+
+
 
 if reference_path == "":
     sys.exit( "No reference_path is indicated" )
@@ -128,8 +149,10 @@ R2 = os.path.join( wd, R2 )
 print "Mapping on the genome"
 os.chdir( folder )
 genome_database = choice_reference( host, "genome" )
-cmd = shlex.split("STAR --runThreadN 10 --genomeDir %s %s --readFilesIn %s %s --outFileNamePrefix %s_data" % (os.path.join(reference_path,"Homo_sapiens/"),genome, R1, R2, host) )
-p = subprocess.Popen( cmd )
+cmd = shlex.split(
+    "STAR --runThreadN 10 --genomeDir %s %s --readFilesIn %s %s --outSAMattributes NM --alignIntronMax 1000000 --alignIntronMin 1  --outFileNamePrefix %s_data" % (
+        os.path.join( reference_path, "Homo_sapiens/" ), genome, R1, R2, host) )
+p = psutil.Popen( cmd )
 p.wait( )
 os.chdir( wd )
 
@@ -145,13 +168,21 @@ if result == 0:
     sys.exit( )
 elif result >= 1:
     sam = Samfile( control_sam )
-    for align in sam:
-        query_name = align.qname  # accession della read
-        if align.tid != -1 or align.cigar is not None:
-            if align.is_read1:
-                r1_mapped.add( query_name )
-            elif align.is_read2:
-                r2_mapped.add( query_name )
+    for align in sam.fetch( until_eof=True ):
+        if align.tid != -1:
+            query_name = align.qname  # accession della read
+            query_len = float( align.rlen )  # lunghezza delle read in esame
+            threshold = int( (query_len / 100) * 3 ) + 1
+            if align.cigar is not None:
+                nm = -1
+                for coppia in align.tags:
+                    if coppia[0] == "NM":
+                        nm = float( coppia[1] )
+                if 0 <= nm <= threshold:
+                    if align.is_read1:
+                        r1_mapped.add( query_name )
+                    elif align.is_read2:
+                        r2_mapped.add( query_name )
     sam.close( )
 
 human_mapped = r1_mapped.intersection( r2_mapped )

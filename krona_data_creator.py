@@ -11,11 +11,10 @@ from string import strip
 def usage():
     print ('This script performs the taxonomic classification, based on the Division data\n'
            'Options'
-
-           '\t-v    Virus representative set. Available sets are virus and refseq_virus [DEFAULT virus]\n'
+           '\t-r    reference path [MANDATORY].\n'
            '\t-h    print this help.\n'
            'Usage:\n'
-           '\tpython new_division_classifier.py -s host \n'
+           '\tpython new_division_classifier.py  \n'
            '\t')
 
 
@@ -34,11 +33,6 @@ for o, a in opts:
         sys.exit( )
     elif o == "-r":
         reference_path = a
-    elif o == "-v":
-        virus_set = a
-        if virus_set not in ["virus", "refseq_virus"]:
-            print usage( )
-            exit( )
     else:
         usage( )
         exit( )
@@ -50,9 +44,8 @@ if reference_path == "":
 host = "human"
 virus_set = "virus"
 
-
 def define_correct_host_name(species):
-    synonyms = {"human": ["Homo sapiens", "homo", "human"], "mouse": ["Mus musculus", "mouse", "mice", "mus"]}
+    synonyms = {"human": ["Homo sapiens", "homo", "human"]}
     for key in synonyms.keys( ):
         if species.lower( ) in synonyms[key]:
             return key
@@ -63,6 +56,26 @@ if host is None:
     print "UNCORRECT HOST SPECIES"
     sys.exit( )
 
+##################################
+# COSTRUZIONE DEI DIZIONARI	     #
+##################################
+node2parent = {}
+node2name = {}
+node2order = {}
+with open(os.path.join(reference_path,"Metashot_reference_taxonomy/nodes.dmp")) as nodes:
+    for line in nodes:
+        fields = map(strip, line.split("|"))
+        node, parent, order =  fields[0], fields[1], fields[2]
+        node2parent[node] = parent
+        node2order[node] = order
+
+with open( os.path.join( reference_path, "Metashot_reference_taxonomy/names.dmp" ) ) as names:
+    for line in names:
+        fields = map( strip, line.split( "|" ) )
+        if "scientific name" in fields:
+            node, name = fields[0] ,fields[1]
+            node2name[node] = name
+
 if host == "human":
     human_viruses = set( )
     host_taxid = "9606"
@@ -72,10 +85,6 @@ else:
     host_taxid = "10090"
 division_list = [virus_set, "bacteria", "fungi", "protist"]
 
-division_to_visualization = dict( virus=os.path.join( reference_path, "Virus/tango_dmp_folder/visualization_virus.dmp" ),
-                                  bacteria=os.path.join( reference_path, "Bacteria/tango_dmp_folder/visualization_bacterial.dmp" ),
-                                  fungi=os.path.join( reference_path, "Fungi/tango_dmp_folder/visualization_fungi.dmp" ),
-                                  protist=os.path.join( reference_path, "Protist/tango_dmp_folder/visualization_protista.dmp" ) )
 
 krona_folder = os.path.join( os.getcwd( ), "krona_data" )
 if os.path.exists( krona_folder ) is not True:
@@ -84,30 +93,14 @@ if os.path.exists( krona_folder ) is not True:
 total = open( os.path.join( krona_folder, "full_data_krona_data.tsv" ), "w" )
 for division in division_list:
     print division
-    NODESFILE = division_to_visualization[division]
-    node2name = {}
-    node2order = {}
-    for line in open( NODESFILE ):
-        line = line.strip( )
-        fields = map( strip, line.split( "|" ) )
-        s = fields[0].split( "#" )
-        nodeid = s[0]
-        node2name[s[0]] = s[1]
-        node2order[s[0]] = s[2]
-    if os.path.exists( os.path.join( division, division + "_classification_data.txt_0.5" ) ):
-        tmp = open( os.path.join( krona_folder, division + "_krona_data.tsv" ), "w" )
-        with open( os.path.join( division, division + "_classification_data.txt_0.5" ) ) as a:
+    if os.path.exists( os.path.join( division, "%s_refined_classification_data.txt" % division) ):
+        tmp = open( os.path.join( krona_folder, "%s_krona_data.tsv" % division ), "w" )
+        with open( os.path.join( division, "%s_refined_classification_data.txt" % division ) ) as a:
             for line in a:
                 s = map( strip, line.split( "\t" ) )
-                read, path = s[0], s[2].split( ";" )
-                order = node2order[path[0]]
-                if order == "GB acc":
-                    node = path[1]
-                else:
-                    node = path[0]
-                # print node2order[node]
-                print >> tmp, read + "\t" + node
-                print >> total, read + "\t" + node
+                read, node = s[0], s[1]
+                tmp.write("%s\t%s\n" % (read, node))
+                total.write("%s\t%s\n" % (read, node))
         tmp.close( )
         print "krona generation"
         cmd = shlex.split( "ktImportTaxonomy -o %s -k %s -tax %s" % (

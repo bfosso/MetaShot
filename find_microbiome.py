@@ -119,41 +119,19 @@ def controllo_read_file(l):
         sys.exit( "read-file doesn't exist or is an empty file" )
 
 
-def cigar_parsing(q_name, q_len, cigar_data, value, r_name):
-    mm = 0
-    i = 0
-    d = 0
-    for item in cigar_data:
-        if item[0] == 0:
-            mm += item[1]
-        elif item[0] == 1:
-            i += item[1]
-        elif item[0] == 2:
-            d += item[1]
-    align_len = mm + i + d
-    query_aligned_len = float( mm + i )
-    if query_aligned_len / q_len >= 0.7:
-        if align_len != 0 and value >= 0:
-            identity_percentage = ((align_len - value) / align_len) * 100
-            if identity_percentage >= 93:
-                evaluated_data = [q_name, r_name, fpformat.fix( identity_percentage, 2 ), str( value )]
-                if align.is_read1:
-                    evaluated_data.append( "r1\n" )
-                elif align.is_read2:
-                    evaluated_data.append( "r2\n" )
-                return evaluated_data
-            else:
-                return None
-
-
-def return_acc(acc):
-    parts = acc.split( )[0].split( "/" )
-    return parts[0]
+def pid_status(process_pid):
+    """This function controls the status of a specific process"""
+    status = ""
+    if psutil.pid_exists( process_pid ):
+        status = psutil.Process( process_pid ).status( )
+    else:
+        status = "finished"
+    return status
 
 
 control_options( f_in, reference_path )
 bowtie_index_files = {}
-for line in open( os.path.join( reference_path, "find_microbiome_index.tsv" ) ):
+for line in open( reference_path ):
     s = map( strip, line.split( ) )
     bowtie_index_files[s[0]] = os.path.join( reference_path, s[1] )
 
@@ -217,57 +195,51 @@ index2result = {}
 mapping_process_pid = {}
 for split in bowtie_index_files.keys( ):
     mapping_folder = os.path.join( premapping_folder, split )
-    sam_output = os.path.join( mapping_folder, split + ".sam" )
+    sam_output = os.path.join( mapping_folder, ".".join( [split, "sam"] ) )
+    process_iteration = 0
     if os.path.exists( mapping_folder ) is False:
         os.mkdir( mapping_folder )
         database = bowtie_index_files[split]
-        cmd = shlex.split( "bowtie2 -q --no-unal -x  %s -1 %s -2 %s -S %s -p 2" % (database, R1, R2, sam_output) )
-        p = subprocess.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT )
+        cmd = shlex.split( "bowtie2 -q --no-unal -x  %s -1 %s -2 %s -S %s -p 2 --mm" % (database, R1, R2, sam_output) )
+        p = psutil.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT )
         mapping_process_pid.setdefault( split, [] )
         mapping_process_pid[split].append( p.pid )
         mapping_process_pid[split].append( mapping_folder )
         mapping_process_pid[split].append( sam_output )
-    else:
-        result = controll_mapping_procedure( sam_output )
-        if result == 0:
-            database = bowtie_index_files[split]
-            cmd = shlex.split( "bowtie2 -q --no-unal -x  %s -1 %s -2 %s -S %s -p 2" % (database, R1, R2, sam_output) )
-            p = subprocess.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT )
-            mapping_process_pid.setdefault( split, [] )
-            mapping_process_pid[split].append( p.pid )
-            mapping_process_pid[split].append( mapping_folder )
-            mapping_process_pid[split].append( sam_output )
+        mapping_process_pid[split].append( process_iteration )
 
 to_analyse = set( )
 completed = set( )
 while len( completed ) != len( mapping_process_pid ):
     for split in mapping_process_pid.keys( ):
         # print split
-        pid = mapping_process_pid[split][0]
+        proc_id = mapping_process_pid[split][0]
         mapping_folder = mapping_process_pid[split][1]
         sam_output = mapping_process_pid[split][2]
-        process_status = ""
-        if psutil.pid_exists( pid ):
-            process_status = psutil.Process( pid ).status( )
-            print pid, process_status
-        # print process_status
-        if psutil.pid_exists( pid ) is False or process_status.lower( ) == "zombie":
+        process_iteration = mapping_process_pid[split][3]
+        process_status = pid_status( proc_id )
+        if psutil.pid_exists( proc_id ) is False or process_status.lower( ) in ["finished", "zombie"]:
             if split not in completed:
                 result = controll_mapping_procedure( sam_output )
                 if result == 0:
-                    print pid, mapping_folder, sam_output
-                    database = bowtie_index_files[split]
-                    cmd = shlex.split( "bowtie2 -q --no-unal -x  %s -1 %s -2 %s -S %s -p 2" % (database, R1, R2, sam_output) )
-                    p = subprocess.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT )
-                    mapping_process_pid.setdefault( split, [] )
-                    mapping_process_pid[split].append( p.pid )
-                    mapping_process_pid[split].append( mapping_folder )
-                    mapping_process_pid[split].append( sam_output )
+                    process_iteration += 1
+                    if process_iteration < 5:
+                        # print proc_id, mapping_folder, sam_output
+                        database = bowtie_index_files[split]
+                        cmd = shlex.split( "bowtie2 -q --no-unal -x  %s -1 %s -2 %s -S %s -p 2 --mm" % (database, R1, R2, sam_output) )
+                        p = psutil.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT )
+                        mapping_process_pid.setdefault( split, [] )
+                        mapping_process_pid[split].append( p.pid )
+                        mapping_process_pid[split].append( mapping_folder )
+                        mapping_process_pid[split].append( sam_output )
+                        mapping_process_pid[split].append( process_iteration )
+                    else:
+                        sys.exit( "the find microbiom procedure for %s and %s data failed after 5 attemps" % (R1, R2) )
                 else:
                     bam_output = sam_output.replace( ".sam", ".bam" )
                     cmd = shlex.split( "samtools view -bS %s -o %s" % (sam_output, bam_output) )
                     tmp = open( os.path.join( mapping_folder, "error.lst" ), "w" )
-                    p = subprocess.Popen( cmd, stderr=tmp )
+                    p = psutil.Popen( cmd, stderr=tmp )
                     p.wait( )
                     tmp.close( )
                     if error_file_check( os.path.join( mapping_folder, "error.lst" ) ) == 0:
@@ -285,32 +257,20 @@ while len( completed ) != len( mapping_process_pid ):
                     file_name = open( os.path.join( mapping_folder, "result_file.lst" ) ).readlines( )[0].strip( )
                     if file_name.endswith( "bam" ):
                         sam = Samfile( file_name, "rb" )
-                        for align in sam.fetch( until_eof=True ):
-                            if align.tid != -1:
-                                query_name = align.qname  # accession della read
-                                query_len = float( align.rlen )  # lunghezza delle read in esame
-                                threshold = int( (query_len / 100) * 9 ) + 1
-                                if align.cigar is not None:
-                                    nm = -1
-                                    for coppia in align.tags:
-                                        if coppia[0] == "NM":
-                                            nm = float( coppia[1] )
-                                    if 0 <= nm <= threshold:
-                                        to_analyse.add( key_name( query_name ) )
                     elif file_name.endswith( "sam" ):
                         sam = Samfile( file_name )
-                        for align in sam.fetch( until_eof=True ):
-                            if align.tid != -1:
-                                query_name = align.qname  # accession della read
-                                query_len = float( align.rlen )  # lunghezza delle read in esame
-                                threshold = int( (query_len / 100) * 9 ) + 1
-                                if align.cigar is not None:
-                                    nm = -1
-                                    for coppia in align.tags:
-                                        if coppia[0] == "NM":
-                                            nm = float( coppia[1] )
-                                    if 0 <= nm <= threshold:
-                                        to_analyse.add( key_name( query_name ) )
+                    for align in sam.fetch( until_eof=True ):
+                        if align.tid != -1:
+                            query_name = align.qname  # accession della read
+                            query_len = float( align.rlen )  # lunghezza delle read in esame
+                            threshold = int( (query_len / 100) * 12 ) + 1
+                            if align.cigar is not None:
+                                nm = -1
+                                for coppia in align.tags:
+                                    if coppia[0] == "NM":
+                                        nm = float( coppia[1] )
+                                if 0 <= nm <= threshold:
+                                    to_analyse.add( key_name( query_name ) )
                     completed.add( split )
 
 print "PE da mappare", len( to_analyse )
@@ -327,5 +287,6 @@ with open( R2 ) as fastq:
         if key_name( title ) in to_analyse:
             candidate_r2.write( "@%s\n%s\n+\n%s\n" % (title, seq, qual) )
 candidate_r2.close( )
+
 script_time = time.strftime( "%d/%m/%Y %H:%M:%S", time.localtime( time.time( ) ) )
 print "END", script_time

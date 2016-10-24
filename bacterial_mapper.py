@@ -112,9 +112,9 @@ option_control( R1, R2, threads, mapping_folder )
 
 sam_output = os.path.join( mapping_folder, "mapping_on_bacterial_%s.sam" % split )
 cmd = shlex.split(
-    "bowtie2 -q -N1 -k100 -L20 --no-unal -x  %s -1 %s -2 %s -S %s -p %s" % (database, R1, R2, sam_output, threads) )
+    "bowtie2 -q -N1 -k50 -L20 --no-unal -x  %s -1 %s -2 %s -S %s -p %s --mm" % (database, R1, R2, sam_output, threads) )
 tmp = open( os.path.join( mapping_folder, "error.lst" ), "w" )
-p = subprocess.Popen( cmd, stderr=tmp )
+p = psutil.Popen( cmd, stderr=tmp )
 p.wait( )
 tmp.close( )
 # sam conversion to bam
@@ -122,7 +122,7 @@ if error_file_check( os.path.join( mapping_folder, "error.lst" ) ) == 0:
     bam_output = os.path.join( mapping_folder, "mapping_on_bacterial_%s.bam" % split )
     cmd = shlex.split( "samtools view -bS %s -o %s" % (sam_output, bam_output) )
     tmp = open( "error.lst", "w" )
-    p = subprocess.Popen( cmd, stderr=tmp )
+    p = psutil.Popen( cmd, stderr=tmp )
     p.wait( )
     tmp.close( )
 else:
