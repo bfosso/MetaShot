@@ -39,7 +39,6 @@ Script Options:
 \t  \tsample1_L002_R1_2.fastq\tsample1_L002_R2_2.fastq
 \t  \tsample1_L003_R1_3.fastq\tsample1_L003_R2_3.fastq
 \t-p\tparameters files: a file containing all the information required for the MetaShot application [MANDATORY]
-\t-t\tNumber of available CPU [MANDATORY]
 \t-h\tprint this help
 \n
 Example:
