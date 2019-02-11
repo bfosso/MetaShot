@@ -22,7 +22,7 @@ def usage():
            '\t-s\tscript path path [MANDATORY]\n'
            '\t-h    print this help.\n'
            'Usage:\n'
-           '\tpython new_division_classifier.py -s host \n'
+           '\tpython new_division_classifier.py -s /path/to/script -r /path/to/reference \n'
            '\t')
 
 
