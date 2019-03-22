@@ -333,8 +333,9 @@ tmp = open( "read_list_cleaned", "w" )
 for i in range( len( multiple_input_data ) ):
     i += 1
     for line in open( os.path.join( working_directory, "trimmed_data_%i" % i, "read_list" ) ):
-        cleaned_list_file = map( strip, line.split( "\t" ) )
-        tmp.write( "%s\t%s\n" % (os.path.join( working_directory, "trimmed_data_%i" % i, cleaned_list_file[0] ),
+        if os.path.exists(os.path.join( working_directory, "trimmed_data_%i" % i, cleaned_list_file[0] )) and os.path.exists(os.path.join( working_directory, "trimmed_data_%i" % i, cleaned_list_file[1]):
+            cleaned_list_file = map( strip, line.split( "\t" ) )
+            tmp.write( "%s\t%s\n" % (os.path.join( working_directory, "trimmed_data_%i" % i, cleaned_list_file[0] ),
                                  os.path.join( working_directory, "trimmed_data_%i" % i, cleaned_list_file[1] )) )
 tmp.close( )
 
