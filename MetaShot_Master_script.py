@@ -359,6 +359,8 @@ with open("read_list_cleaned", "w") as tmp:
                     "%s\t%s\n" % (os.path.join(working_directory, "trimmed_data_%i" % i, cleaned_list_file[0]),
                                   os.path.join(working_directory, "trimmed_data_%i" % i, cleaned_list_file[1])))
 
+if file_dimension("read_list_cleaned") == 0:
+    sys.exit("There are no trimmed data")
 
 ###################################
 # MICROBIAL CANDIDATES READ LIST  #
