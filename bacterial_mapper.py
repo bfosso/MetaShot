@@ -9,7 +9,7 @@ import sys
 from string import strip
 import psutil
 import numpy
-from pysam import *
+from pysam import Samfile
 
 
 def usage():

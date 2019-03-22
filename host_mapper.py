@@ -7,7 +7,7 @@ import shlex
 import getopt
 from string import strip
 import sys
-from pysam import *
+from pysam import Samfile
 import shutil
 import gzip
 import psutil
