@@ -37,6 +37,7 @@ Script Options:
 \t  \tsample1_L002_R1_2.fastq\tsample1_L002_R2_2.fastq
 \t  \tsample1_L003_R1_3.fastq\tsample1_L003_R2_3.fastq
 \t-p\tparameters files: a file containing all the information required for the MetaShot application [MANDATORY]
+\t-e\texclude the host mapping
 \t-h\tprint this help
 \n
 Example:
@@ -46,8 +47,9 @@ Example:
 multiple_input_data = []
 working_directory = os.getcwd()
 parameters_file = ""
+exclude_host = False
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "m:p:h")
+    opts, args = getopt.getopt(sys.argv[1:], "m:p:h:e")
 except getopt.GetoptError, err:
     print str(err)
     print script_info["Description"]
@@ -67,6 +69,8 @@ if len(opts) != 0:
                 sys.exit()
         elif o == "-p":
             parameters_file = a
+        elif o == "-e":
+            exclude_host = True
         elif o == "-h":
             print script_info["usage"]
             sys.exit()
@@ -382,68 +386,75 @@ if file_dimension("candidate_microbial_list") == 0:
 # MAPPING ON THE HUMAN GENOME #
 ###############################
 # to map all the human sequence against the human genome, first load the star reference genome
-cmd = split("STAR --genomeDir %s --genomeLoad LoadAndExit" % os.path.join(reference_path, "Homo_sapiens"))
-p = subprocess.Popen(cmd)
-p.wait()
-data_processing_list = {}
-for i in range(len(multiple_input_data)):
-    i += 1
-    folder = os.path.join(working_directory, "trimmed_data_%i" % i)
-    # print folder
-    data_processing_list.setdefault(i, [])
-    os.chdir(folder)
-    process_iteration = 0
-    mapper = split(
-        "python %s -s human -i read_list -g -r %s" % (os.path.join(script_path, "host_mapper.py"), reference_path))
-    p = subprocess.Popen(mapper)
-    # print p.pid
-    data_processing_list[i].append(p.pid)
-    data_processing_list[i].append(os.path.join(folder, "mapping_on_human", "human_dataAligned.out.sam"))
-    data_processing_list[i].append(process_iteration)
-    os.chdir(working_directory)
+if exclude_host is False:
+    cmd = split("STAR --genomeDir %s --genomeLoad LoadAndExit" % os.path.join(reference_path, "Homo_sapiens"))
+    p = subprocess.Popen(cmd)
+    p.wait()
+    data_processing_list = {}
+    for i in range(len(multiple_input_data)):
+        i += 1
+        folder = os.path.join(working_directory, "trimmed_data_%i" % i)
+        # print folder
+        data_processing_list.setdefault(i, [])
+        os.chdir(folder)
+        process_iteration = 0
+        mapper = split(
+            "python %s -s human -i read_list -g -r %s" % (os.path.join(script_path, "host_mapper.py"), reference_path))
+        p = subprocess.Popen(mapper)
+        # print p.pid
+        data_processing_list[i].append(p.pid)
+        data_processing_list[i].append(os.path.join(folder, "mapping_on_human", "human_dataAligned.out.sam"))
+        data_processing_list[i].append(process_iteration)
+        os.chdir(working_directory)
 
-completed = set()
-while len(completed) != len(data_processing_list):
-    for index in data_processing_list.keys():
-        if index not in completed:
-            # print split
-            proc_id = data_processing_list[index][0]
-            sam_output = data_processing_list[index][1]
-            process_status = pid_status(proc_id)
-            if psutil.pid_exists(proc_id) is False or process_status.lower() in ["finished", "zombie"]:
-                # print sam_output
-                result = control_mapping_procedure(sam_output)
-                # print result
-                if result == 0:
-                    folder = os.path.join(working_directory, "trimmed_data_%i" % index)
-                    print folder
-                    os.chdir(folder)
-                    del data_processing_list[index]
-                    data_processing_list.setdefault(index, [])
-                    mapper = split(
-                        "python %s -s human -i read_list -g -r %s" % (
-                            os.path.join(script_path, "host_mapper.py"), reference_path))
-                    p = subprocess.Popen(mapper)
-                    data_processing_list[index].append(p.pid)
-                    data_processing_list[index].append(
-                        os.path.join(folder, "mapping_on_human", "human_dataAligned.out.sam"))
-                    os.chdir(working_directory)
-                elif result == 1:
-                    completed.add(index)
-                    print len(completed), len(data_processing_list)
+    completed = set()
+    while len(completed) != len(data_processing_list):
+        for index in data_processing_list.keys():
+            if index not in completed:
+                # print split
+                proc_id = data_processing_list[index][0]
+                sam_output = data_processing_list[index][1]
+                process_status = pid_status(proc_id)
+                if psutil.pid_exists(proc_id) is False or process_status.lower() in ["finished", "zombie"]:
+                    # print sam_output
+                    result = control_mapping_procedure(sam_output)
+                    # print result
+                    if result == 0:
+                        folder = os.path.join(working_directory, "trimmed_data_%i" % index)
+                        print folder
+                        os.chdir(folder)
+                        del data_processing_list[index]
+                        data_processing_list.setdefault(index, [])
+                        mapper = split(
+                            "python %s -s human -i read_list -g -r %s" % (
+                                os.path.join(script_path, "host_mapper.py"), reference_path))
+                        p = subprocess.Popen(mapper)
+                        data_processing_list[index].append(p.pid)
+                        data_processing_list[index].append(
+                            os.path.join(folder, "mapping_on_human", "human_dataAligned.out.sam"))
+                        os.chdir(working_directory)
+                    elif result == 1:
+                        completed.add(index)
+                        print len(completed), len(data_processing_list)
 
-cmd = split("STAR --genomeDir %s --genomeLoad Remove" % os.path.join(reference_path, "Homo_sapiens"))
-p = subprocess.Popen(cmd)
-p.wait()
-human_folder = os.path.join(working_directory, "mapping_on_human")
-if os.path.exists(human_folder) is False:
-    os.mkdir(human_folder)
-with open(os.path.join(human_folder, "mapped_on_host.lst"), "w") as tmp:
-    for i in completed:
-        data = os.path.join(working_directory, "trimmed_data_%i" % i, "mapping_on_human", "mapped_on_host.lst")
-        with open(data) as a:
-            for line in a:
-                tmp.write(line)
+    cmd = split("STAR --genomeDir %s --genomeLoad Remove" % os.path.join(reference_path, "Homo_sapiens"))
+    p = subprocess.Popen(cmd)
+    p.wait()
+    human_folder = os.path.join(working_directory, "mapping_on_human")
+    if os.path.exists(human_folder) is False:
+        os.mkdir(human_folder)
+    with open(os.path.join(human_folder, "mapped_on_host.lst"), "w") as tmp:
+        for i in completed:
+            data = os.path.join(working_directory, "trimmed_data_%i" % i, "mapping_on_human", "mapped_on_host.lst")
+            with open(data) as a:
+                for line in a:
+                    tmp.write(line)
+else:
+    human_folder = os.path.join(working_directory, "mapping_on_human")
+    if os.path.exists(human_folder) is False:
+        os.mkdir(human_folder)
+    tmp = open(os.path.join(human_folder, "mapped_on_host.lst"), "w")
+    tmp.close()
 
 ###################################
 #         DIVISION MAPPING        #
