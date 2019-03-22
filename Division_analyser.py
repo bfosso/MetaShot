@@ -17,7 +17,7 @@ try:
 except:
     sys.exit( "numpy module not found" )
 try:
-    from pysam import *
+    from pysam import Samfile
 except:
     sys.exit( "pysam module not found" )
 try:
