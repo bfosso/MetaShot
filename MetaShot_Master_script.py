@@ -14,12 +14,12 @@ import subprocess
 
 try:
     from pysam import Samfile
-except:
-    raise ValueError("pysam is not installed")
+except ValueError:
+    sys.exit("pysam is not installed")
 try:
     from Bio.SeqIO.QualityIO import FastqGeneralIterator
-except:
-    raise ValueError("biopython is not installed")
+except ValueError:
+    sys.exit("biopython is not installed")
 
 script_info = dict(Description="""
 This script performs the whole MetaShot computation
@@ -122,9 +122,9 @@ def control_mapping_procedure(sam_file):
 def verify_fastq(fastq1, fastq2):
     count_1 = 0
     if os.path.exists(fastq1) is False:
-        sys.exit("file %s is missing" % fastq1)
+        sys.exit('file %s is missing' % fastq1)
     if os.path.exists(fastq2) is False:
-        sys.exit("file %s is missing" % fastq2)
+        sys.exit('file %s is missing' % fastq2)
     if fastq1.endswith("gz"):
         l1 = gzip.open(fastq1)
     else:
@@ -145,6 +145,11 @@ def verify_fastq(fastq1, fastq2):
     else:
         fastq_result = 0
     return fastq_result
+
+
+def file_dimension(path2file):
+    dim = os.stat(path2file)[6]
+    return dim
 
 
 def parameter_file_paser(param_file):
@@ -255,6 +260,7 @@ std_out_file.close()
 
 # low_quality, low-complexity removal
 # STDOUT and STDERR are redirected to the same file
+print "Cleaning data"
 data_processing_list = {}
 std_out_file = open("faqcs_stdout.out", "w")
 index = 1
@@ -264,9 +270,8 @@ for data in cleaned_multiple_input_data:
     R1 = data[0]
     R2 = data[1]
     output_folder = os.path.join(working_directory, "trimmed_data_" + str(index))
-    cmd = split("FaQCs.pl -p %s %s -mode BWA_plus -q 25 -min_L 50 -n 2 -lc 0.70 -t 10  -d %s" % (
+    cmd = split("FaQCs -1 %s -2 %s -mode BWA_plus -q 25 -min_L 50 -n 2 -lc 0.70 -t 10  -d %s" % (
         R1, R2, output_folder))
-    # print cmd
     p = subprocess.Popen(cmd, stdout=std_out_file, stderr=std_out_file)
     data_processing_list[index].append(p.pid)
     data_processing_list[index].append(output_folder)
@@ -338,13 +343,42 @@ with open("read_list_cleaned", "w") as tmp:
         i += 1
         for line in open(os.path.join(working_directory, "trimmed_data_%i" % i, "read_list")):
             cleaned_list_file = map(strip, line.split("\t"))
+            r1_dim = None
+            r2_dim = None
             if os.path.exists(os.path.join(working_directory, "trimmed_data_%i" % i, cleaned_list_file[0])):
-                if os.path.exists(os.path.join(working_directory, "trimmed_data_%i" % i, cleaned_list_file[1])):
-                    tmp.write(
-                        "%s\t%s\n" % (os.path.join(working_directory, "trimmed_data_%i" % i, cleaned_list_file[0]),
-                                      os.path.join(working_directory, "trimmed_data_%i" % i, cleaned_list_file[1])))
+                r1_dim = file_dimension(os.path.join(working_directory, "trimmed_data_%i" % i, cleaned_list_file[0]))
+            if os.path.exists(os.path.join(working_directory, "trimmed_data_%i" % i, cleaned_list_file[1])):
+                r2_dim = file_dimension(
+                    os.path.join(working_directory, "trimmed_data_%i" % i, cleaned_list_file[1]))
+            if r1_dim is not None and r2_dim is not None and r1_dim != 0 and r2_dim != 0:
+                tmp.write(
+                    "%s\t%s\n" % (os.path.join(working_directory, "trimmed_data_%i" % i, cleaned_list_file[0]),
+                                  os.path.join(working_directory, "trimmed_data_%i" % i, cleaned_list_file[1])))
 
-            ###############################
+
+###################################
+# MICROBIAL CANDIDATES READ LIST  #
+###################################
+# Annotazione dei file fastq contenenti le read denoised in un nuovo file read list
+with open("candidate_microbial_list", "w") as tmp:
+    for i in range(len(multiple_input_data)):
+        i += 1
+        trimmed = os.path.join(working_directory, "trimmed_data_%i" % i)
+        r1_dim = None
+        r2_dim = None
+        if os.path.exists(os.path.join(working_directory, "trimmed_data_%i" % i, "R1_micro_candidates.fastq")):
+            r1_dim = file_dimension(os.path.join(working_directory, "trimmed_data_%i" % i, "R1_micro_candidates.fastq"))
+        if os.path.exists(os.path.join(working_directory, "trimmed_data_%i" % i, "R2_micro_candidates.fastq")):
+            r2_dim = file_dimension(os.path.join(working_directory, "trimmed_data_%i" % i, "R2_micro_candidates.fastq"))
+        if r1_dim is not None and r2_dim is not None and r1_dim != 0 and r2_dim != 0:
+            tmp.write("%s\t%s\n" % (os.path.join(working_directory, "trimmed_data_%i" % i, "R1_micro_candidates.fastq"),
+                                    os.path.join(working_directory, "trimmed_data_%i" % i,
+                                                 "R2_micro_candidates.fastq")))
+
+if file_dimension("candidate_microbial_list") == 0:
+    sys.exit("in your sample there are not microbial candidates")
+
+###############################
 # MAPPING ON THE HUMAN GENOME #
 ###############################
 # to map all the human sequence against the human genome, first load the star reference genome
@@ -404,25 +438,12 @@ p.wait()
 human_folder = os.path.join(working_directory, "mapping_on_human")
 if os.path.exists(human_folder) is False:
     os.mkdir(human_folder)
-tmp = open(os.path.join(human_folder, "mapped_on_host.lst"), "w")
-for i in completed:
-    data = os.path.join(working_directory, "trimmed_data_%i" % i, "mapping_on_human", "mapped_on_host.lst")
-    with open(data) as a:
-        for line in a:
-            tmp.write(line)
-tmp.close()
-
-###################################
-# MICROBIAL CANDIDATES READ LIST  #
-###################################
-# Annotazione dei file fastq contenenti le read denoised in un nuovo file read list
-tmp = open("candidate_microbial_list", "w")
-for i in range(len(multiple_input_data)):
-    i += 1
-    trimmed = os.path.join(working_directory, "trimmed_data_%i" % i)
-    tmp.write("%s\t%s\n" % (os.path.join(working_directory, "trimmed_data_%i" % i, "R1_micro_candidates.fastq"),
-                            os.path.join(working_directory, "trimmed_data_%i" % i, "R2_micro_candidates.fastq")))
-tmp.close()
+with open(os.path.join(human_folder, "mapped_on_host.lst"), "w") as tmp:
+    for i in completed:
+        data = os.path.join(working_directory, "trimmed_data_%i" % i, "mapping_on_human", "mapped_on_host.lst")
+        with open(data) as a:
+            for line in a:
+                tmp.write(line)
 
 ###################################
 #         DIVISION MAPPING        #
