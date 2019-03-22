@@ -230,9 +230,9 @@ def pid_status(process_pid):
 def return_sam_obj(align_file):
     sam_obj = None
     if align_file.endswith("bam"):
-        sam_obj = Samfile(file_name, "rb")
+        sam_obj = Samfile(align_file, "rb")
     elif align_file.endswith("sam"):
-        sam_obj = Samfile(file_name)
+        sam_obj = Samfile(align_file)
     return sam_obj
 
 
@@ -386,4 +386,4 @@ with open(os.path.join(bacterial_folder, "mapped_on_bacteria_total.txt"), "w") a
                 if perc_id >= 97:
                     match_list.append(ref)
             if len(match_list) > 1:
-                print >> match_file, " ".join(match_list)
+                match_file.write("%s\n" % " ".join(match_list))

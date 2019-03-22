@@ -1,9 +1,10 @@
-__author__ = 'Bruno Fosso'
+__author__ = 'Bruno Fosso'  # type: str
 import getopt
 import os
 import sys
 from string import strip
 from ete2 import Tree, TreeNode
+
 
 def usage():
     print ('This script converts the taxonomic assignments made by TANGO in a taxonomical tree:\n'
@@ -15,7 +16,7 @@ def usage():
            'Usage:\n'
            '\tpython tango_ass_2_taxa_freq.py -n nodes_file -d division -i taxonomic assignment file\n'
            '\t'
-    )
+           )
 
 
 reference_path = ""
@@ -71,18 +72,18 @@ node2name = {}
 node2order = {}
 all_ids = set([])
 all_nodes = []
-with open(os.path.join(reference_path,"Metashot_reference_taxonomy/nodes.dmp")) as nodes:
+with open(os.path.join(reference_path, "Metashot_reference_taxonomy/nodes.dmp")) as nodes:
     for line in nodes:
         fields = map(strip, line.split("|"))
-        node, parent, order =  fields[0], fields[1], fields[2]
+        node, parent, order = fields[0], fields[1], fields[2]
         node2parent[node] = parent
         node2order[node] = order
 
-with open( os.path.join( reference_path, "Metashot_reference_taxonomy/names.dmp" ) ) as names:
+with open(os.path.join(reference_path, "Metashot_reference_taxonomy/names.dmp")) as names:
     for line in names:
-        fields = map( strip, line.split( "|" ) )
+        fields = map(strip, line.split("|"))
         if "scientific name" in fields:
-            node, name = fields[0] ,fields[1]
+            node, name = fields[0], fields[1]
             node2name[node] = name
 
 # DEPRECATED
@@ -127,7 +128,7 @@ for key in seq2taxa.keys():
         value = int(s[1].lstrip("size="))
     else:
         value = 1
-    if assigned.has_key(seq2taxa[key]):
+    if seq2taxa[key] in assigned.keys():
         assigned[seq2taxa[key]] += value
     else:
         assigned[seq2taxa[key]] = value
@@ -138,7 +139,7 @@ for key in seq2taxa.keys():
 ass_node2parent = {"1": "1"}
 for nodeid in taxa:
     parentid = node2parent[nodeid]
-    while nodeid != parentid:  #costruiamo un nuovo dizionario per i soli taxa che abbiamo identificato nel campione
+    while nodeid != parentid:  # costruiamo un nuovo dizionario per i soli taxa che abbiamo identificato nel campione
         ass_node2parent[nodeid] = parentid
         nodeid = parentid
         parentid = node2parent[nodeid]
@@ -158,6 +159,8 @@ for nodeid in ass_node2parent.keys():
     # updates node list and connections
     node2parentid[n] = parentid
     id2node[nodeid] = n
+
+t = None
 print len(id2node)
 # Reconstruct tree topology from previously stored tree connections
 print 'Reconstructing tree topology...'
@@ -172,14 +175,14 @@ for node in id2node.itervalues():
 
 freq = {}
 for node in t.iter_search_nodes():
-    if assigned.has_key(node.taxid):
+    if node.taxid in assigned.keys():
         val = int(assigned[node.taxid])
         node.add_feature("assigned", assigned[node.taxid])
     else:
         val = 0
         node.add_feature("assigned", "0")
     for child in node.iter_descendants():
-        if assigned.has_key(child.taxid):
+        if child.taxid in assigned.keys():
             val = val + assigned[child.taxid]
     node.add_feature("summarized", str(val))
 
@@ -195,5 +198,3 @@ for node in t.iter_search_nodes(name="NoName"):
 open(basename + "_tree.nwk", "w").write(t.write(features=["name", "taxid", "assigned", "summarized", "Order"]))
 
 t = Tree(basename + "_tree.nwk")
-
-
