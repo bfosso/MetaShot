@@ -1,7 +1,7 @@
 __author__ = 'Bruno Fosso'
 __version__ = 1.1
 __manteiner__ = "Bruno Fosso"
-__mail__ = "b.fosso@ibbe.cnr.it"
+__mail__ = "b.fosso@ibiom.cnr.it"
 
 import getopt
 import gzip
@@ -329,15 +329,15 @@ for i in range( len( multiple_input_data ) ):
 # CLEANED READ-LIST FILE CREATION #
 ###################################
 # Annotazione dei file fastq contenenti le read denoised in un nuovo file read list
-tmp = open( "read_list_cleaned", "w" )
-for i in range( len( multiple_input_data ) ):
-    i += 1
-    for line in open( os.path.join( working_directory, "trimmed_data_%i" % i, "read_list" ) ):
-        if os.path.exists(os.path.join( working_directory, "trimmed_data_%i" % i, cleaned_list_file[0] )) and os.path.exists(os.path.join( working_directory, "trimmed_data_%i" % i, cleaned_list_file[1]):
-            cleaned_list_file = map( strip, line.split( "\t" ) )
-            tmp.write( "%s\t%s\n" % (os.path.join( working_directory, "trimmed_data_%i" % i, cleaned_list_file[0] ),
-                                 os.path.join( working_directory, "trimmed_data_%i" % i, cleaned_list_file[1] )) )
-tmp.close( )
+with open( "read_list_cleaned", "w" ) as tmp:
+    for i in range( len( multiple_input_data ) ):
+        i += 1
+        for line in open( os.path.join( working_directory, "trimmed_data_%i" % i, "read_list" ) ):
+            if os.path.exists(os.path.join( working_directory, "trimmed_data_%i" % i, cleaned_list_file[0] )) and os.path.exists(os.path.join( working_directory, "trimmed_data_%i" % i, cleaned_list_file[1]):
+                cleaned_list_file = map( strip, line.split( "\t" ) )
+                tmp.write( "%s\t%s\n" % (os.path.join( working_directory, "trimmed_data_%i" % i, cleaned_list_file[0] ),
+                                     os.path.join( working_directory, "trimmed_data_%i" % i, cleaned_list_file[1] )))
+                                                                                                                               
 
 ###############################
 # MAPPING ON THE HUMAN GENOME #
