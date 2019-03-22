@@ -308,7 +308,7 @@ while len(completed) != len(data_processing_list):
                         # print exec_folder
                         del data_processing_list[index]
                         data_processing_list.setdefault(index, [])
-                        cmd = split("FaQCs.pl -p %s %s -mode BWA_plus -q 25 -min_L 50 -n 2 -lc 0.70 -t 10  -d %s" % (
+                        cmd = split("FaQCs -p %s %s -mode BWA_plus -q 25 -min_L 50 -n 2 -lc 0.70 -t 10  -d %s" % (
                             R1, R2, exec_folder))
                         p = subprocess.Popen(cmd, stdout=std_out_file, stderr=std_out_file)
                         data_processing_list[index].append(p.pid)
