@@ -1,7 +1,7 @@
-__author__ = 'Bruno Fosso'
-__version__ = 1.1
-__manteiner__ = "Bruno Fosso"
-__mail__ = "b.fosso@ibiom.cnr.it"
+__author__ = 'Bruno Fosso'  # type: str
+__version__ = 1.1 # type: float
+__manteiner__ = "Bruno Fosso" # type: str
+__mail__ = "b.fosso@ibiom.cnr.it" # type: str
 
 import getopt
 import gzip
@@ -15,13 +15,11 @@ import subprocess
 try:
     from pysam import Samfile
 except:
-    print "pysam is not installed"
-    sys.exit( )
+    raise ValueError("pysam is not installed")
 try:
     from Bio.SeqIO.QualityIO import FastqGeneralIterator
 except:
-    print "biopython is not installed"
-    sys.exit( )
+    raise ValueError("biopython is not installed")
 
 script_info = dict( Description="""
 This script performs the whole MetaShot computation
@@ -84,7 +82,6 @@ else:
 # function definition #
 #######################
 def pid_status(process_pid):
-    status = ""
     if psutil.pid_exists( process_pid ):
         status = psutil.Process( process_pid ).status( )
     else:
@@ -132,7 +129,7 @@ def verify_fastq(fastq1, fastq2):
         l1 = gzip.open( fastq1 )
     else:
         l1 = open( fastq1 )
-    for title, seq, qual in FastqGeneralIterator( l1 ):
+    for title, seq, qual in FastqGeneralIterator( l1 ):  # type: (str, str, str)
         count_1 += 1
     l1.close( )
     count_2 = 0
@@ -140,7 +137,7 @@ def verify_fastq(fastq1, fastq2):
         l2 = gzip.open( fastq2 )
     else:
         l2 = open( fastq2 )
-    for acc, sequence, quality in FastqGeneralIterator( l2 ):
+    for acc, sequence, quality in FastqGeneralIterator( l2 ):  # type: (str, str, str)
         count_2 += 1
     l2.close( )
     if count_1 == count_2:
@@ -150,7 +147,7 @@ def verify_fastq(fastq1, fastq2):
     return fastq_result
 
 
-def parameter_file_paser(c):
+def parameter_file_paser(parameters_file):
     params = {}
     with open( parameters_file ) as c:
         for stringa in c:
@@ -224,8 +221,10 @@ while len( completed ) != len( data_processing_list ):
             proc_id = data_processing_list[index][0]
             output_folder = data_processing_list[index][1]
             process_iteration = data_processing_list[index][4]
-            process_status = ""
-            process_status = pid_status( proc_id )
+            try:
+                process_status = pid_status(proc_id)
+            except:
+                process_status = ""
             if psutil.pid_exists( proc_id ) is False or process_status.lower( ) in ["finished", "zombie"]:
                 phix_data_1 = os.path.join( output_folder, "R1_no_phix.fastq" )
                 phix_data_2 = os.path.join( output_folder, "R2_no_phix.fastq" )
@@ -235,13 +234,13 @@ while len( completed ) != len( data_processing_list ):
                     R1 = data_processing_list[index][2]
                     R2 = data_processing_list[index][3]
                     if process_iteration < 5:
-                        # print exec_folder
+                        # print output_folder
                         del data_processing_list[index]
                         data_processing_list.setdefault( index, [] )
                         cmd = split( "python %s -1 %s -2 %s -o %s -p %s" % (os.path.join( script_path, "Phix_cleaner.py" ), R1, R2, output_folder, reference_path) )
                         p = subprocess.Popen( cmd, stdout=std_out_file, stderr=std_out_file )
                         data_processing_list[index].append( p.pid )
-                        data_processing_list[index].append( exec_folder )
+                        data_processing_list[index].append( output_folder )
                         data_processing_list[index].append( R1 )
                         data_processing_list[index].append( R2 )
                         data_processing_list[index].append( process_iteration )
@@ -257,11 +256,11 @@ std_out_file.close( )
 data_processing_list = {}
 std_out_file = open( "faqcs_stdout.out", "w" )
 index = 1
+process_iteration = 0
 for data in cleaned_multiple_input_data:
     data_processing_list.setdefault( index, [] )
     R1 = data[0]
     R2 = data[1]
-    process_iteration = 0
     output_folder = os.path.join( working_directory, "trimmed_data_" + str( index ) )
     cmd = split( "FaQCs.pl -p %s %s -mode BWA_plus -q 25 -min_L 50 -n 2 -lc 0.70 -t 10  -d %s" % (
         R1, R2, output_folder) )
@@ -277,12 +276,15 @@ for data in cleaned_multiple_input_data:
 completed = set( )
 while len( completed ) != len( data_processing_list ):
     for index in data_processing_list.keys( ):
+        exec_folder = data_processing_list[index][1]
         if index not in completed:
             # print split
             proc_id = data_processing_list[index][0]
             exec_folder = data_processing_list[index][1]
-            process_status = ""
-            process_status = pid_status( proc_id )
+            try:
+                process_status = pid_status(proc_id)
+            except:
+                process_status = ""
             if psutil.pid_exists( proc_id ) is False or process_status.lower( ) in ["finished", "zombie"]:
                 trimmed_data_1 = os.path.join( exec_folder, "QC.1.trimmed.fastq" )
                 trimmed_data_2 = os.path.join( exec_folder, "QC.2.trimmed.fastq" )
@@ -296,7 +298,7 @@ while len( completed ) != len( data_processing_list ):
                         del data_processing_list[index]
                         data_processing_list.setdefault( index, [] )
                         cmd = split( "FaQCs.pl -p %s %s -mode BWA_plus -q 25 -min_L 50 -n 2 -lc 0.70 -t 10  -d %s" % (
-                            R1, R2, output_folder) )
+                            R1, R2, exec_folder) )
                         p = subprocess.Popen( cmd, stdout=std_out_file, stderr=std_out_file )
                         data_processing_list[index].append( p.pid )
                         data_processing_list[index].append( exec_folder )
@@ -333,8 +335,8 @@ with open( "read_list_cleaned", "w" ) as tmp:
     for i in range( len( multiple_input_data ) ):
         i += 1
         for line in open( os.path.join( working_directory, "trimmed_data_%i" % i, "read_list" ) ):
+            cleaned_list_file = map(strip, line.split("\t"))
             if os.path.exists(os.path.join( working_directory, "trimmed_data_%i" % i, cleaned_list_file[0] )) and os.path.exists(os.path.join( working_directory, "trimmed_data_%i" % i, cleaned_list_file[1]):
-                cleaned_list_file = map( strip, line.split( "\t" ) )
                 tmp.write( "%s\t%s\n" % (os.path.join( working_directory, "trimmed_data_%i" % i, cleaned_list_file[0] ),
                                      os.path.join( working_directory, "trimmed_data_%i" % i, cleaned_list_file[1] )))
                                                                                                                                
