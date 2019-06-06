@@ -93,8 +93,9 @@ else:
 #     return status
 
 def pid_status(process_pid):
-    """This function controls the status of a specific process"""
-    status = ""
+    """This function controls the status of a specific process
+    :type process_pid: int
+    """
     try:
         status = psutil.Process(process_pid).status()
     except OSError:
