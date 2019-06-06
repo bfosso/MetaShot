@@ -85,10 +85,19 @@ else:
 #######################
 # function definition #
 #######################
+# def pid_status(process_pid):
+#     if psutil.pid_exists(process_pid):
+#         status = psutil.Process(process_pid).status()
+#     else:
+#         status = "finished"
+#     return status
+
 def pid_status(process_pid):
-    if psutil.pid_exists(process_pid):
+    """This function controls the status of a specific process"""
+    status = ""
+    try:
         status = psutil.Process(process_pid).status()
-    else:
+    except OSError:
         status = "finished"
     return status
 

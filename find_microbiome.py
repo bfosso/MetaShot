@@ -122,9 +122,9 @@ def controllo_read_file(l):
 def pid_status(process_pid):
     """This function controls the status of a specific process"""
     status = ""
-    if psutil.pid_exists(process_pid):
+    try:
         status = psutil.Process(process_pid).status()
-    else:
+    except OSError:
         status = "finished"
     return status
 
@@ -235,7 +235,7 @@ while len(completed) != len(mapping_process_pid):
                         mapping_process_pid[split].append(sam_output)
                         mapping_process_pid[split].append(process_iteration)
                     else:
-                        sys.exit("the find microbiom procedure for %s and %s data failed after 5 attemps" % (R1, R2))
+                        sys.exit("the find microbiome procedure for %s and %s data failed after 5 attemps" % (R1, R2))
                 else:
                     bam_output = sam_output.replace(".sam", ".bam")
                     cmd = shlex.split("samtools view -bS %s -o %s" % (sam_output, bam_output))
