@@ -217,15 +217,23 @@ def cigar_parsing(q_name, q_len, cigar_data, value, r_name):
         return None
 
 
+# def pid_status(process_pid):
+#     """This function controls the status of a specific process"""
+#     status = ""
+#     if psutil.pid_exists(process_pid):
+#         status = psutil.Process(process_pid).status()
+#     else:
+#         status = "finished"
+#     return status
+
 def pid_status(process_pid):
     """This function controls the status of a specific process"""
     status = ""
-    if psutil.pid_exists(process_pid):
+    try:
         status = psutil.Process(process_pid).status()
-    else:
+    except OSError:
         status = "finished"
     return status
-
 
 def return_sam_obj(align_file):
     sam_obj = None
