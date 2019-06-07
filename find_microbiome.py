@@ -125,7 +125,8 @@ def pid_status(process_pid):
     """
     try:
         status = psutil.Process(process_pid).status()
-    except OSError:
+        raise psutil.NoSuchProcess
+    except psutil.NoSuchProcess:
         status = "finished"
     return status
 
