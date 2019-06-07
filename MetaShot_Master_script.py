@@ -85,6 +85,8 @@ else:
 #######################
 # function definition #
 #######################
+
+# DEPRECATED
 # def pid_status(process_pid):
 #     if psutil.pid_exists(process_pid):
 #         status = psutil.Process(process_pid).status()
@@ -98,7 +100,8 @@ def pid_status(process_pid):
     """
     try:
         status = psutil.Process(process_pid).status()
-    except OSError:
+        # raise psutil.NoSuchProcess(process_pid)
+    except psutil.NoSuchProcess:
         status = "finished"
     return status
 

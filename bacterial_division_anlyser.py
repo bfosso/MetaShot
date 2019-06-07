@@ -227,11 +227,13 @@ def cigar_parsing(q_name, q_len, cigar_data, value, r_name):
 #     return status
 
 def pid_status(process_pid):
-    """This function controls the status of a specific process"""
-    status = ""
+    """This function controls the status of a specific process
+    :type process_pid: int
+    """
     try:
         status = psutil.Process(process_pid).status()
-    except OSError:
+        # raise psutil.NoSuchProcess(process_pid)
+    except psutil.NoSuchProcess:
         status = "finished"
     return status
 
