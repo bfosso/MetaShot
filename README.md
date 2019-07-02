@@ -4,13 +4,16 @@
 In MetaShot, third party tools and new developed Python and Bash scripts are integrated to analyze paired-end (PE) Illumina reads, offering an automated procedure covering all the analysis steps from raw data management to taxonomic profiling.  
 MetaShot is designed to analyze both DNA-Seq and RNA-Seq data. 
 
-1. [Pipeline description](#Pipeline description) 
-2. [Division data creation](#Division data creation)
+1. [Pipeline description](#Pipeline-description) 
+2. [Division data creation](#Division-data-creation)
 3. [Install](#Install)  
     3.a [Requirements](#Requirements)  
-    3.b [MetaShot setting up](#MetaShot setting up)  
+    3.b [MetaShot setting up](#MetaShot-setting-up)  
 4. [Usage](#Usage)
-
+    4.a [Taxonomic assignment](#Taxonomic-assignment)
+    4.b [Paired End (PE) reads extraction](Paired-End-(PE)-reads-extraction)
+    4.c [Result files interpretation](#Result-files-interpretation)
+    
 ##Pipeline description  
 The MetaShot analysis procedure can be divided in four main processes:
 
