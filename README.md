@@ -11,7 +11,7 @@ MetaShot is designed to analyze both DNA-Seq and RNA-Seq data.
     3.b [MetaShot setting up](#MetaShot setting up)  
 4. [Usage](#Usage)
 
-## Pipeline description  
+##Pipeline description  
 The MetaShot analysis procedure can be divided in four main processes:
 
   1. Pre-processing procedures: input sequences containing low-quality/complexity regions and reads shorter than 50 nucleotides are removed. This is performed by applying FaQCs [1]. Moreover, it removes the phage PhiX sequences. Only reads passing all the quality check filters are directed to the following steps.
@@ -22,7 +22,7 @@ The MetaShot analysis procedure can be divided in four main processes:
       * Human Endogenous Retrovirus (HERV) identification: in order to identify HERV sequences, the PE reads labeled as ambiguous are parsed to identify those mapping only to human genome and to the viral division. These PE reads are subsequently taxonomically annotated by applying TANGO on the mapping information obtained against the viral division. If the obtained classification is under the HERV group it is accepted, otherwise the PE will be considered ambiguous.
   4.	Report generation: a CSV file, an HTML interactive table summarizing the taxonomic assignment and a Krona graph [7] of the obtained taxonomy are provided for each division.
 
-## Division data creation 
+##Division data creation 
 The reference collections for Prokaryotes, Viruses, Fungi and Protista have been built by following a common procedure, with some specific add-ons, implemented in a Bash and Python pipeline:
 -	For each collection the GenBank and RefSeq flat-file and FASTA files were downloaded from the NCBI ftp site [ftp://ftp.ncbi.nlm.nih.gov](ftp://ftp.ncbi.nlm.nih.gov). For Prokaryotes and Viruses two specific GenBank divisions (BCT and VRL) are available. For Fungi, the “Plantae” GenBank division (PLN) was downloaded and the fungal entries were identified by parsing the taxonomic information of each entry. For Protista, the “Invertebrate” GenBank division (INV) was downloaded and the Protista entries were collected by suitably parsing the taxonomic information of each entry. Regarding the RefSeq data, specific divisions are available for Prokaryotes, Viruses and Fungi. As for GenBank data, the Prostista collection was created by downloading and parsing the “invertebrate” RefSeq division.
 -	The entire NCBI taxonomy dump data were downloaded from the NCBI ftp site  [ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz](ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz). 
@@ -31,8 +31,8 @@ The reference collections for Prokaryotes, Viruses, Fungi and Protista have been
 -	By using the dump containing the accession number – taxid association the TANGO reference taxonomy was built.
 The current MetaShot reference collections were built starting from the releases 209 and 72 of the GenBank and RefSeq databases, respectively.
 
-## Install 
-### Requirements
+##Install 
+###Requirements
 MetaShot scripts use freely available Python packages and third party tools both requiring an installation performed by the users.
 Actually, it requires a working Python 2.7 environment and the following modules:
  - NumPy: release 1.7.1 or superior [http://www.numpy.org](http://www.numpy.org)
