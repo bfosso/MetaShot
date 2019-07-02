@@ -11,7 +11,7 @@ MetaShot is designed to analyze both DNA-Seq and RNA-Seq data.
     3.b [MetaShot setting up](#MetaShot setting up)  
 4. [Usage](#Usage)
 
-##Pipeline description  
+## Pipeline description  
 The MetaShot analysis procedure can be divided in four main processes:
 
   1. Pre-processing procedures: input sequences containing low-quality/complexity regions and reads shorter than 50 nucleotides are removed. This is performed by applying FaQCs [1]. Moreover, it removes the phage PhiX sequences. Only reads passing all the quality check filters are directed to the following steps.
@@ -51,6 +51,7 @@ MetaShot requires at least 30 Gb of RAM to perform the entire analysis. Its refe
 To complete the analysis of 500 million PE reads it requires about 1.3 Tb.
 
 ###MetaShot setting up
+
 ####Download the reference collections
 All the reference collections, taxonomies and the other files needed for the MetaShot computation are stored in the compressed folder **MetaShot_reference_data.tar.gz**, freely available at [https://recascloud.ba.infn.it/index.php/s/9dFFTJUr0bOU2mN](https://recascloud.ba.infn.it/index.php/s/9dFFTJUr0bOU2mN) (the file is about 49 GB. Md5sum: 2def0475c8c3b49c15181de0c226b11a).  
 To decompress the folder, type the following command in your terminal: `tar xvfz MetaShot_reference_data.tar.gz`  
