@@ -13,6 +13,7 @@ MetaShot is designed to analyze both DNA-Seq and RNA-Seq data.
     4.a [Taxonomic assignment](#Taxonomic-assignment)  
     4.b [Paired End (PE) reads extraction](Paired-End-(PE)-reads-extraction)  
     4.c [Result files interpretation](#Result-files-interpretation)  
+5. [References](#References)
     
 ## Pipeline description  
 The MetaShot analysis procedure can be divided in four main processes:
@@ -35,7 +36,7 @@ The reference collections for Prokaryotes, Viruses, Fungi and Protista have been
 The current MetaShot reference collections were built starting from the releases 209 and 72 of the GenBank and RefSeq databases, respectively.
 
 ## Install 
-###Requirements
+### Requirements
 MetaShot scripts use freely available Python packages and third party tools both requiring an installation performed by the users.
 Actually, it requires a working Python 2.7 environment and the following modules:
  - NumPy: release 1.7.1 or superior [http://www.numpy.org](http://www.numpy.org)
@@ -53,9 +54,9 @@ The following tools need to be installed on your machine:
 MetaShot requires at least 30 Gb of RAM to perform the entire analysis. Its reference collections require about 420Gb of free space on your storage system.  
 To complete the analysis of 500 million PE reads it requires about 1.3 Tb.
 
-###MetaShot setting up
+### MetaShot setting up
 
-####Download the reference collections
+#### Download the reference collections
 All the reference collections, taxonomies and the other files needed for the MetaShot computation are stored in the compressed folder **MetaShot_reference_data.tar.gz**, freely available at [https://recascloud.ba.infn.it/index.php/s/9dFFTJUr0bOU2mN](https://recascloud.ba.infn.it/index.php/s/9dFFTJUr0bOU2mN) (the file is about 49 GB. Md5sum: 2def0475c8c3b49c15181de0c226b11a).  
 To decompress the folder, type the following command in your terminal: `tar xvfz MetaShot_reference_data.tar.gz`  
 The **MetaShot_reference_data** folder contains 9 subfolders:  
@@ -78,7 +79,7 @@ The **MetaShot_reference_data** folder contains 9 subfolders:
  - New_TANGO_perl_version. Contains the executable TANGO Perl scripts,
  - Metashot_reference_taxonomy: contains the taxonomy data.
 
-####Configure the Parameters File
+#### Configure the Parameters File
 In the MetaShot package, a textual file called “parameters_file.txt” is available that contains all the required information for the pipeline execution.  
 The user must complete this file by adding the following information to the “General data” section:  
    1. Adding the complete path to the MetaShot package:  
@@ -92,8 +93,8 @@ The user must complete this file by adding the following information to the “G
     ```  
     Copy the result in correspondence of “reference_path”, as in the following example: reference_path : `/home/path/to/the/reference_folder/`  
 
-##Usage
-###Taxonomic assignment
+## Usage
+### Taxonomic assignment
 The whole MetaShot analysis is performed by executing the __MetaShot_Master_script.py__ script.  
 This script requires the following mandatory and optional parameters to launch the analysis process:
  - **-m** A text file containing the R1 and R2 PE reads file names, tab separated \[MANDATORY].  
@@ -106,7 +107,7 @@ This script requires the following mandatory and optional parameters to launch t
  - **-e** Exclude the host mapping for the analysis of environmental samples
  - **-h** print this help
 
-###Paired End (PE) reads extraction
+### Paired End (PE) reads extraction
 Following the end of MetaShot analysis, the user could be interested in extracting specific PE reads.  
 The __PE_extraction.py__ script can be used to extract the PE reads belonging to specific taxa in the NCBI taxonomy or to extract all the unassigned or ambiguous PE reads.  
 This script requires as input a single NCBI taxonomy identifier or a list of NCBI taxonomy identifiers.  
@@ -117,7 +118,7 @@ Options:
  - **-a** extract ambiguous PE reads
  _ **-h** print this help
 
-###Result files interpretation
+### Result files interpretation
 MetaShot produces the following results:
  1. An HTML interactive table reporting for each node of the inferred taxonomy [Figure1](#Figure1):
     - the taxon name; 
@@ -130,8 +131,7 @@ MetaShot produces the following results:
 ![](readme_data_folder/Figure1.jpg)
 _**Figure1**: an example of the interactive tables produced by MetaShot. In red are enumerated the field in common with the CSV file. In particular: (1) Taxon Name: the NCBI scientific name of the node; (2) Rank: the taxonomic rank of the node; (3) Taxonomy ID: the NCBI taxonomy identifier of the node; (4) Directly Assigned Sequences: number of PE reads directly assigned to the node; (5) Descendants Assignments: the number of PE reads assigned to the node and to its descendants (i.e. the first node is the species Propionibacterium acnes and MetaShot assigns directly to this node 48,802 and 9,001 to its descendants, so the fifth field in the line is equal to 57,803). In blue are listed the interactive fields to show the results on the basis of the NCBI taxonomic rank (A) or on a specific taxon name (B)._
 
-References
-----------
+# References
 1.	Lo, C.C. and P.S. Chain, Rapid evaluation and quality control of next generation sequencing data with FaQCs. BMC Bioinformatics, 2014. 15: p. 366.
 2.	Rosenbloom, K.R., et al. The UCSC Genome Browser database: 2015 update. Nucleic Acids Res, 2015. 43(Database issue): p. D670-D681.
 3.	Dobin, A., et al., STAR: ultrafast universal RNA-seq aligner. Bioinformatics, 2013. 29(1): p. 15-21.
