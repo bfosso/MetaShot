@@ -11,7 +11,7 @@ MetaShot is designed to analyze both DNA-Seq and RNA-Seq data.
     3.b [MetaShot setting up](#MetaShot setting up)  
 4. [Usage](#Usage)
 
-## Pipeline description  
+##Pipeline description  
 The MetaShot analysis procedure can be divided in four main processes:
 
   1. Pre-processing procedures: input sequences containing low-quality/complexity regions and reads shorter than 50 nucleotides are removed. This is performed by applying FaQCs [1]. Moreover, it removes the phage PhiX sequences. Only reads passing all the quality check filters are directed to the following steps.
