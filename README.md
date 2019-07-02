@@ -102,9 +102,11 @@ This script requires the following mandatory and optional parameters to launch t
  - **-m** A text file containing the R1 and R2 PE reads file names, tab separated \[MANDATORY].  
     If a sample has been split in more flowcell lines, please insert in the file one line per each PE reads file.  
     Example: The sample1 has been sequenced in 3 flowcell lines. The read file content will be the following:  
+   ``` 
     sample1_L001_R1.fastq sample1_L001_R2.fastq  
     sample1_L002_R1.fastq sample1_L002_R2.fastq  
     sample1_L003_R1.fastq sample1_L003_R2.fastq
+   ```
  - **-p** Parameters files: a file containing all the information required for the MetaShot application \[MANDATORY]
  - **-e** Exclude the host mapping for the analysis of environmental samples
  - **-h** print this help
