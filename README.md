@@ -11,7 +11,7 @@ MetaShot is designed to analyze both DNA-Seq and RNA-Seq data.
     3.b [MetaShot setting up](#MetaShot-setting-up)  
 4. [Usage](#Usage)  
     4.a [Taxonomic assignment](#Taxonomic-assignment)  
-    4.b [Paired End (PE) reads extraction](Paired-End-(PE)-reads-extraction)  
+    4.b [Paired End (PE) reads extraction](#Paired-End-(PE)-reads-extraction)
     4.c [Result files interpretation](#Result-files-interpretation)  
 5. [References](#References)
     
@@ -132,7 +132,7 @@ MetaShot produces the following results:
 2. a CSV file containing the same information reported in the interactive table;
 3. a Krona graph to graphically inspect the inferred microbiome. In particular, a Krona graph is produced for each division and a total one is produced to summarize the entire assignments. Information about the Krona graph is available following this [link](https://github.com/marbl/Krona/wiki).
 
-![](readme_data_folder/Figure1.jpg)
+![Figure2](readme_data_folder/Figure1.jpg)
 _**Figure2**: an example of the interactive tables produced by MetaShot. In red are enumerated the field in common with the CSV file. In particular: (1) Taxon Name: the NCBI scientific name of the node; (2) Rank: the taxonomic rank of the node; (3) Taxonomy ID: the NCBI taxonomy identifier of the node; (4) Directly Assigned Sequences: number of PE reads directly assigned to the node; (5) Descendants Assignments: the number of PE reads assigned to the node and to its descendants (i.e. the first node is the species Propionibacterium acnes and MetaShot assigns directly to this node 48,802 and 9,001 to its descendants, so the fifth field in the line is equal to 57,803). In blue are listed the interactive fields to show the results on the basis of the NCBI taxonomic rank (A) or on a specific taxon name (B)._
 
 # References
