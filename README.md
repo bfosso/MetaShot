@@ -11,7 +11,7 @@ MetaShot is designed to analyze both DNA-Seq and RNA-Seq data.
     3.b [MetaShot setting up](#MetaShot-setting-up)  
 4. [Usage](#Usage)  
     4.a [Taxonomic assignment](#Taxonomic-assignment)  
-    4.b [Paired End (PE) reads extraction](#Paired-End-(PE)-reads-extraction)
+    4.b [Paired End (PE) reads extraction](#Paired-End-(PE)-reads-extraction)  
     4.c [Result files interpretation](#Result-files-interpretation)  
 5. [References](#References)
     
