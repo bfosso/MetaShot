@@ -46,6 +46,7 @@ Actually, it requires a working Python 2.7 environment and the following modules
  - Pysam: 0.7.4 [http://pysam.readthedocs.io/en/stable/](http://pysam.readthedocs.io/en/stable/)
  - Psutil: release 3.3.0 [https://github.com/giampaolo/psutil](https://github.com/giampaolo/psutil)
  - ETE2: release 2.3.10 [http://etetoolkit.org/download/](http://etetoolkit.org/download/)
+ 
 The following tools need to be installed on your machine:
  - Bowtie2: release2.2.3 [http://bowtie-bio.sourceforge.net/bowtie2/index.shtml](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml)
  - STAR: release STAR_2.4.2a [https://github.com/alexdobin/STAR](https://github.com/alexdobin/STAR)
