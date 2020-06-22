@@ -1,6 +1,6 @@
 # **MetaShot (Metagemomics Shotgun)**
 
-**MetaShot (Metagenomics Shotgun)** is a pipeline designed for the complete taxonomic assessment of the human microbiota.  
+**MetaShot (Metagenomics Shotgun)** [PMID: 28130230](https://pubmed.ncbi.nlm.nih.gov/28130230/) is a pipeline designed for the complete taxonomic assessment of the human microbiota.  
 In MetaShot, third party tools and new developed Python and Bash scripts are integrated to analyze paired-end (PE) Illumina reads, offering an automated procedure covering all the analysis steps from raw data management to taxonomic profiling.  
 MetaShot is designed to analyze both DNA-Seq and RNA-Seq data. 
 
